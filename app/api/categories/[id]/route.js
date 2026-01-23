@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Category from "../../models/cartegorymodel";
-import Product from "../../models/Product";
+import newProduct from "../../models/newproduct";
 import { connectDB } from "../../config/db";
 import { requireAuth } from "../../auth/auth";
 
@@ -35,7 +35,7 @@ export async function GET(request, context) {
       category = await Category.findById(CategoryId).lean();
       
       // Get product count separately if not populating
-      const productCount = await Product.countDocuments({ 
+      const productCount = await newProduct.countDocuments({ 
         category: CategoryId,
         isPublished: true 
       });
@@ -73,10 +73,10 @@ export async function GET(request, context) {
 // -------------------------------------------
 // UPDATE CATEGORY (ADMIN ONLY)
 // -------------------------------------------
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
     await connectDB();
-
+const {id}=await context.params;
     const user = await requireAuth(request);
     if (!user || user.role !== "admin") {
       return NextResponse.json(
@@ -87,7 +87,7 @@ export async function PUT(request, { params }) {
 
     const { name, description, image, isActive } = await request.json();
 
-    const category = await Category.findById(params.id);
+    const category = await Category.findById(id);
     if (!category) {
       return NextResponse.json(
         { success: false, message: "Category not found" },
@@ -135,7 +135,7 @@ export async function PUT(request, { params }) {
 // -------------------------------------------
 // DELETE CATEGORY (ADMIN ONLY)
 // -------------------------------------------
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
     await connectDB();
 
@@ -146,8 +146,8 @@ export async function DELETE(request, { params }) {
         { status: 401 }
       );
     }
-
-    const category = await Category.findById(params.id);
+const {id}=await context.params;
+    const category = await Category.findById(id);
     if (!category) {
       return NextResponse.json(
         { success: false, message: "Category not found" },
@@ -156,8 +156,8 @@ export async function DELETE(request, { params }) {
     }
 
     // Check product count
-    const productCount = await Product.countDocuments({
-      categoryId: params.id,
+    const productCount = await newProduct.countDocuments({
+      categoryId: id,
     });
 
     if (productCount > 0) {
@@ -170,7 +170,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    await Category.deleteOne({ _id: params.id });
+    await Category.deleteOne({ _id: id });
 
     return NextResponse.json({
       success: true,

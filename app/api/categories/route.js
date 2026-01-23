@@ -4,7 +4,8 @@ import Category from "../models/cartegorymodel";
 import Product from "../models/Product";
 import { connectDB } from "../config/db";
 import { requireAuth } from "../auth/auth";
-
+import slugify from "slugify";
+import cloudinary from "../_lib/cloudnary";
 // ---------------------------------------------------------
 // @desc    Create Category (Admin Only)
 // @route   POST /api/categories
@@ -14,11 +15,10 @@ export async function POST(request) {
   try {
     await connectDB();
 
-    // Authenticate
+    // ---------- AUTH ----------
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    // Check admin
     if (user.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Not authorized" },
@@ -26,13 +26,14 @@ export async function POST(request) {
       );
     }
 
-    const body = await request.json();
-    const name = body.name?.trim();
-    const description = body.description?.trim() || null;
-    const image = body.image || null;
-    const isActive = body.isActive ?? true;
+    const formData = await request.formData();
 
-    // Validate name
+    // ---------- BASIC FIELDS ----------
+    const name = formData.get("name")?.toString().trim();
+    const description = formData.get("description")?.toString() || "";
+    const parentCategory = formData.get("parentCategory") || null;
+    const isActive = formData.get("isActive") !== "false";
+
     if (!name) {
       return NextResponse.json(
         { success: false, message: "Category name is required" },
@@ -40,36 +41,71 @@ export async function POST(request) {
       );
     }
 
-    // Check duplicate (case-insensitive)
-    const existingCategory = await Category.findOne({
-      name: { $regex: new RegExp(`^${name}$`, "i") },
-    });
+    const slug = slugify(name, { lower: true, strict: true });
 
-    if (existingCategory) {
+    // ---------- DUPLICATE CHECK ----------
+    const existing = await Category.findOne({ slug, parentCategory });
+    if (existing) {
       return NextResponse.json(
-        { success: false, message: "Category with this name already exists" },
+        {
+          success: false,
+          message: "Category already exists at this level",
+        },
         { status: 400 }
       );
     }
 
-    // Create category
+    // ---------- IMAGE UPLOAD ----------
+    let image = null;
+    const imageFile = formData.get("image");
+
+    if (imageFile instanceof File && imageFile.size > 0) {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              folder: "ecommerce/categories",
+              transformation: [
+                { width: 800, height: 800, crop: "limit" },
+                { quality: "auto" },
+                { format: "webp" },
+              ],
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          )
+          .end(buffer);
+      });
+
+      image = {
+        url: result.secure_url,
+        publicId: result.public_id,
+      };
+    }
+
+    // ---------- CREATE CATEGORY ----------
     const category = await Category.create({
       name,
+      slug,
       description,
       image,
+      parentCategory,
       isActive,
-      products: [] // important initialization
     });
 
     return NextResponse.json(
       {
         success: true,
         message: "Category created successfully",
-        data: { category },
+        data: category,
       },
       { status: 201 }
     );
-
   } catch (error) {
     console.error("Create category error:", error);
     return NextResponse.json(
@@ -82,8 +118,6 @@ export async function POST(request) {
     );
   }
 }
-
-
 // ---------------------------------------------------------
 // @desc    Get Categories (Optionally Include Products)
 // @route   GET /api/categories
@@ -94,17 +128,29 @@ export async function GET(request) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
+
     const includeProducts = searchParams.get("includeProducts") === "true";
     const onlyActive = searchParams.get("onlyActive") !== "false"; // default true
+    const parent = searchParams.get("parent"); // ✅ NEW
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 50;
 
     const query = {};
+
+    // ✅ ACTIVE FILTER
     if (onlyActive) query.isActive = true;
+
+    // ✅ PARENT FILTER
+    if (parent) {
+      query.parentCategory = parent;
+    } else {
+      // top-level categories (Men, Women)
+      query.parentCategory = null;
+    }
 
     const skip = (page - 1) * limit;
 
-    // Fetch categories with pagination
+    // Fetch categories
     const categories = await Category.find(query)
       .sort({ name: 1 })
       .skip(skip)
@@ -113,13 +159,12 @@ export async function GET(request) {
 
     const total = await Category.countDocuments(query);
 
-    // Include product details or counts
+    // ---------------- INCLUDE PRODUCTS ----------------
     if (includeProducts) {
-      // Fetch products grouped by category
       const categoriesWithProducts = await Promise.all(
         categories.map(async (category) => {
           const products = await Product.find({
-            categoryId: category._id,
+            category: category._id, // ✅ FIXED FIELD
             ...(onlyActive && { isPublished: true }),
           }).select("name price images stock isPublished");
 
@@ -129,29 +174,7 @@ export async function GET(request) {
 
       return NextResponse.json({
         success: true,
-        data: { categories: categoriesWithProducts },
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      });
-    } else {
-      // Add product count to each category
-      const categoriesWithCount = await Promise.all(
-        categories.map(async (category) => {
-          const productCount = await Product.countDocuments({
-            categoryId: category._id,
-            ...(onlyActive && { isPublished: true }),
-          });
-          return { ...category, productCount };
-        })
-      );
-
-      return NextResponse.json({
-        success: true,
-        data: { categories: categoriesWithCount },
+        data: categoriesWithProducts,
         pagination: {
           page,
           limit,
@@ -160,6 +183,30 @@ export async function GET(request) {
         },
       });
     }
+
+    // ---------------- PRODUCT COUNT ONLY ----------------
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await Product.countDocuments({
+          category: category._id, // ✅ FIXED FIELD
+          ...(onlyActive && { isPublished: true }),
+        });
+
+        return { ...category, productCount };
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: categoriesWithCount,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+
   } catch (error) {
     console.error("Get all categories error:", error);
     return NextResponse.json(

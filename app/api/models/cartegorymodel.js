@@ -7,41 +7,52 @@ const categorySchema = new mongoose.Schema(
       type: String,
       default: uuidv4,
       unique: true,
+      index: true,
     },
+
     name: {
       type: String,
-      required: [true, "Category name is required"],
-      unique: true,
+      required: true,
       trim: true,
-      maxlength: [100, "Category name cannot exceed 100 characters"],
+      maxlength: 100,
     },
+
+    slug: {
+      type: String,
+      required: true,
+      lowercase: true,
+      index: true,
+    },
+
     description: {
       type: String,
-      default: null,
-      trim: true,
+      default: "",
     },
-    image: {
-      type: String,
-      validate: {
-        validator: (v) => !v || /^https?:\/\/.+/i.test(v),
-        message: "Invalid image URL format",
-      },
+
+ image: {
+  url: { type: String, required: true },
+  publicId: { type: String, required: true },
+},
+    // ✅ CATEGORY HIERARCHY
+    parentCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       default: null,
     },
+
     isActive: {
       type: Boolean,
       default: true,
     },
-    products: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
   },
   { timestamps: true }
 );
 
-const Category =
-  mongoose.models.Category || mongoose.model("Category", categorySchema);
-export default Category;
+// Prevent duplicate categories under same parent
+categorySchema.index(
+  { slug: 1, parentCategory: 1 },
+  { unique: true }
+);
+
+export default mongoose.models.Category ||
+  mongoose.model("Category", categorySchema);

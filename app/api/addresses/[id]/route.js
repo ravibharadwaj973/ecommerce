@@ -3,62 +3,63 @@ import { connectDB } from "../../config/db";
 import Address from "../../models/Address";
 import { requireAuth } from "../../auth/auth";
 
-// @desc    Get address by ID
-// @route   GET /api/addresses/[id]
-// @access  Private
-export async function GET(request, { params }) {
-  try {
-    await connectDB();
-
-    const user = await requireAuth(request);
-    if (user instanceof NextResponse) return user;
-
-    const address = await Address.findById(params.id);
-    if (!address) {
-      return NextResponse.json(
-        { success: false, message: "Address not found" },
-        { status: 404 }
-      );
-    }
-
-    if (address.userId.toString() !== user.id) {
-      return NextResponse.json(
-        { success: false, message: "Not authorized to view this address" },
-        { status: 403 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: { address },
-    });
-  } catch (error) {
-    console.error("Get address by ID error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Error fetching address",
-        error: error.message,
-      },
-      { status: 500 }
-    );
-  }
-}
 
 // @desc    Update address
 // @route   PUT /api/addresses/[id]
 // @access  Private
-export async function PUT(request, { params }) {
+export async function PATCH(request, context) {
   try {
     await connectDB();
 
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    const { type, street, city, state, zipCode, country, isDefault } =
-      await request.json();
+    // ✅ FIX: params is already an object
+    const   {id:addressId}  = await context.params;
 
-    const address = await Address.findById(params.id);
+    // ✅ Safe body read
+    const body = await request.clone().json();
+
+    const allowedFields = [
+      "label",
+      "fullName",
+      "phone",
+      "addressLine1",
+      "addressLine2",
+      "city",
+      "state",
+      "postalCode",
+      "country",
+      "isDefault",
+    ];
+
+    const updateData = {};
+    for (const key of allowedFields) {
+      if (body[key] !== undefined) {
+        updateData[key] = body[key];
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { success: false, message: "No valid fields to update" },
+        { status: 400 }
+      );
+    }
+  const addresscpy = await Address.findById(addressId);
+
+    if (!addresscpy) {
+      return NextResponse.json(
+        { success: false, message: "Addreskjhkjds not found" },
+        { status: 404 }
+      );
+    }
+    // 🔐 Ownership check
+    const address = await Address.findOne({
+      _id: addressId,      // ✅ now a string
+      user: user.id,
+    });
+
     if (!address) {
       return NextResponse.json(
         { success: false, message: "Address not found" },
@@ -66,37 +67,13 @@ export async function PUT(request, { params }) {
       );
     }
 
-    if (address.userId.toString() !== user.id) {
-      return NextResponse.json(
-        { success: false, message: "Not authorized to update this address" },
-        { status: 403 }
-      );
-    }
-
-    // If setting as default, unset other defaults first
-    if (isDefault && !address.isDefault) {
-      await Address.updateMany(
-        { userId: user.id },
-        { $set: { isDefault: false } }
-      );
-    }
-
-    // Update the address
-    address.type = type || address.type;
-    address.street = street || address.street;
-    address.city = city || address.city;
-    address.state = state || address.state;
-    address.zipCode = zipCode || address.zipCode;
-    address.country = country || address.country;
-    address.isDefault =
-      isDefault !== undefined ? isDefault : address.isDefault;
-
+    Object.assign(address, updateData);
     await address.save();
 
     return NextResponse.json({
       success: true,
       message: "Address updated successfully",
-      data: { address },
+      data: address,
     });
   } catch (error) {
     console.error("Update address error:", error);
@@ -110,29 +87,28 @@ export async function PUT(request, { params }) {
     );
   }
 }
-
-// @desc    Delete address
+// @desc    Delete an address
 // @route   DELETE /api/addresses/[id]
 // @access  Private
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
     await connectDB();
 
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    const address = await Address.findById(params.id);
+    const { id: addressId } = await context.params;
+
+    // 🔐 Secure ownership + existence check in ONE query
+    const address = await Address.findOne({
+      _id: addressId,
+      user: user.id,
+    });
+
     if (!address) {
       return NextResponse.json(
         { success: false, message: "Address not found" },
         { status: 404 }
-      );
-    }
-
-    if (address.userId.toString() !== user.id) {
-      return NextResponse.json(
-        { success: false, message: "Not authorized to delete this address" },
-        { status: 403 }
       );
     }
 
@@ -154,3 +130,4 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+

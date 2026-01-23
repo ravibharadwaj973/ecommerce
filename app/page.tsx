@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import ProductGrid from './components/ProductGrid';
+import HeroSlider from './components/Heroslider';
 
 export default function HomePage() {
   const [categories, setCategories] = useState([]);
@@ -51,6 +52,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-10">
+        <HeroSlider/>
         <div className="container mx-auto px-4">
           <div className="animate-pulse space-y-10">
             {[...Array(3)].map((_, i) => (

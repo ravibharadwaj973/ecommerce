@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/config/db";
-import Order from "@/models/Order";
+import { connectDB } from "../../config/db";
+import Order from "../../models/order";
 import { requireAuth } from "../../auth/auth";
 
 // @desc    Get order statistics
@@ -21,10 +21,10 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get("period") || "month"; // day, week, month, year
+    const period = searchParams.get("period") || "month"; // day | week | month | year
 
-    // Calculate start date for filtering
-    let startDate = new Date();
+    // ---------------- DATE RANGE ----------------
+    const startDate = new Date();
     switch (period) {
       case "day":
         startDate.setDate(startDate.getDate() - 1);
@@ -38,25 +38,21 @@ export async function GET(request) {
       case "year":
         startDate.setFullYear(startDate.getFullYear() - 1);
         break;
-      default:
-        startDate.setMonth(startDate.getMonth() - 1);
     }
 
-    // ---- 🧮 Aggregate stats ----
-
-    // Total orders
+    // ---------------- TOTAL ORDERS ----------------
     const totalOrders = await Order.countDocuments();
 
-    // Recent orders (in selected period)
+    // ---------------- RECENT ORDERS ----------------
     const recentOrders = await Order.countDocuments({
       createdAt: { $gte: startDate },
     });
 
-    // Total revenue (only paid + not cancelled)
+    // ---------------- TOTAL REVENUE ----------------
     const revenueAgg = await Order.aggregate([
       {
         $match: {
-          paymentStatus: "paid",
+          "payment.status": "paid",
           status: { $ne: "cancelled" },
         },
       },
@@ -67,9 +63,9 @@ export async function GET(request) {
         },
       },
     ]);
-    const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].totalRevenue : 0;
+    const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
 
-    // Orders by status (for chart or dashboard)
+    // ---------------- ORDERS BY STATUS ----------------
     const ordersByStatus = await Order.aggregate([
       {
         $group: {
@@ -78,16 +74,20 @@ export async function GET(request) {
         },
       },
       {
-        $project: { _id: 0, status: "$_id", count: 1 },
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1,
+        },
       },
     ]);
 
-    // Recent sales by day
+    // ---------------- SALES OVER TIME ----------------
     const recentSales = await Order.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate },
-          paymentStatus: "paid",
+          "payment.status": "paid",
           status: { $ne: "cancelled" },
         },
       },
@@ -100,7 +100,7 @@ export async function GET(request) {
           orderCount: { $sum: 1 },
         },
       },
-      { $sort: { "_id": 1 } },
+      { $sort: { _id: 1 } },
       {
         $project: {
           _id: 0,
@@ -111,7 +111,7 @@ export async function GET(request) {
       },
     ]);
 
-    // ---- ✅ Return result ----
+    // ---------------- RESPONSE ----------------
     return NextResponse.json({
       success: true,
       data: {

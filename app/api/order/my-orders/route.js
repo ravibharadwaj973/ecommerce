@@ -1,61 +1,57 @@
 import { NextResponse } from "next/server";
-import Order from "../../models/order";
 import { connectDB } from "../../config/db";
 import { requireAuth } from "../../auth/auth";
+import Order from "../../models/order";
 
-// @desc    Get user's orders
-// @route   GET /api/orders/my-orders
-// @access  Private
 export async function GET(request) {
   try {
     await connectDB();
 
     const user = await requireAuth(request);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Not authenticated" },
-        { status: 401 }
-      );
-    }
+    if (user instanceof NextResponse) return user;
 
     const { searchParams } = new URL(request.url);
 
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 10;
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const sortBy = searchParams.get("sortBy") || "createdAt";
-    const sortOrder = searchParams.get("sortOrder") === "ASC" ? 1 : -1;
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
 
-    const query = { userId: user.id };
+    // ---------------- FILTER ----------------
+    const query = { user: user.id };
 
-    // Status filter
-    if (status) query.status = status;
+    if (status) {
+      query.status = status;
+    }
 
-    // Search filter
     if (search) {
       query.$or = [
-        { id: { $regex: search, $options: 'i' } },
-        { 'items.name': { $regex: search, $options: 'i' } }
+        { orderNumber: { $regex: search, $options: "i" } }
       ];
     }
 
     const skip = (page - 1) * limit;
 
-    // Fetch orders with population
-    const orders = await Order.find(query)
-      .populate('items.productId', 'name price images')
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // ---------------- FETCH ORDERS ----------------
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .populate({
+          path: "items.variant",
+          populate: { path: "product" }
+        })
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
 
-    // Count total
-    const total = await Order.countDocuments(query);
+      Order.countDocuments(query),
+    ]);
 
     return NextResponse.json({
       success: true,
-      data: { orders },
+      data: orders,
       pagination: {
         page,
         limit,

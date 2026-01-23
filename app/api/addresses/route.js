@@ -9,48 +9,66 @@ import { requireAuth } from "../auth/auth";
 export async function POST(request) {
   try {
     await connectDB();
+
+    // 🔐 Auth (must not read request body)
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    const { type, street, city, state, zipCode, country, isDefault } =
-      await request.json();
+    // ✅ CLONE REQUEST BEFORE READING BODY
+    const body = await request.clone().json();
 
-    // Validate required fields
-    if (!street || !city || !state || !zipCode) {
+    const {
+      label,
+      fullName,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      postalCode,
+      country,
+      isDefault,
+    } = body;
+
+    // ---------------- VALIDATION ----------------
+    if (
+      !fullName ||
+      !phone ||
+      !addressLine1 ||
+      !city ||
+      !state ||
+      !postalCode
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Street, city, state, and zip code are required",
+          message:
+            "fullName, phone, addressLine1, city, state, and postalCode are required",
         },
         { status: 400 }
       );
     }
 
-    // If the new address is default, unset any existing default addresses
-    if (isDefault) {
-      await Address.updateMany(
-        { userId: user.id },
-        { $set: { isDefault: false } }
-      );
-    }
-
-    // Create new address
+    // ---------------- CREATE ADDRESS ----------------
     const address = await Address.create({
-      userId: user.id,
-      type: type || "home",
-      street,
+      user: user.id,                 // ✅ correct field
+      label: label || "home",
+      fullName,
+      phone,
+      addressLine1,
+      addressLine2: addressLine2 || null,
       city,
       state,
-      zipCode,
-      country: country || "US",
-      isDefault: isDefault || false,
+      postalCode,
+      country: country || "IN",
+      isDefault: Boolean(isDefault),
     });
 
     return NextResponse.json(
       {
         success: true,
         message: "Address created successfully",
-        data: { address },
+        data: address,
       },
       { status: 201 }
     );
@@ -67,23 +85,22 @@ export async function POST(request) {
   }
 }
 
-// @desc Get all addresses for a user
-// @route GET /api/addresses
-// @access Private
+// @desc    Get all addresses for logged-in user
+// @route   GET /api/addresses
+// @access  Private
 export async function GET(request) {
   try {
     await connectDB();
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    const addresses = await Address.find({ userId: user.id }).sort({
-      isDefault: -1,
-      createdAt: -1,
-    });
+    const addresses = await Address.find({ user: user.id })
+      .sort({ isDefault: -1, createdAt: -1 })
+      .lean();
 
     return NextResponse.json({
       success: true,
-      data: { addresses },
+      data: addresses,
       count: addresses.length,
     });
   } catch (error) {
@@ -98,3 +115,4 @@ export async function GET(request) {
     );
   }
 }
+

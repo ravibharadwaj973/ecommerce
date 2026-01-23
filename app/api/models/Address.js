@@ -1,90 +1,100 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const addressSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User'
-  },
-  type: {
-    type: String,
-    enum: ['home', 'work', 'other'],
-    required: true,
-    default: 'home'
-  },
-  street: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 255
-  },
-  city: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  state: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  zipCode: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 15,
-    validate: {
-      validator: function(v) {
-        return /^[0-9A-Za-z-]+$/.test(v);
-      },
-      message: 'Zip code can only contain numbers, letters, and dashes'
-    }
-  },
-  country: {
-    type: String,
-    required: true,
-    default: 'US',
-    trim: true,
-    maxlength: 100
-  },
-  isDefault: {
-    type: Boolean,
-    default: false
-  }
-}, {
-  timestamps: true // creates createdAt and updatedAt automatically
-});
+const addressSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-// Compound index to ensure only one default address per user
-addressSchema.index({ userId: 1, isDefault: 1 }, { 
-  unique: true, 
-  partialFilterExpression: { isDefault: true } 
-});
+    label: {
+      type: String,
+      enum: ["home", "work", "other"],
+      default: "home",
+    },
 
-// Index for efficient queries by user
-addressSchema.index({ userId: 1 });
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 120,
+    },
 
-// Pre-save middleware to handle default address logic
-addressSchema.pre('save', async function(next) {
-  if (this.isDefault && this.isModified('isDefault')) {
-    try {
-      // Remove default status from other addresses of this user
-      await mongoose.model('Address').updateMany(
-        { 
-          userId: this.userId, 
-          _id: { $ne: this._id } 
-        },
-        { $set: { isDefault: false } }
-      );
-    } catch (error) {
-      return next(error);
-    }
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 20,
+    },
+
+    addressLine1: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 255,
+    },
+
+    addressLine2: {
+      type: String,
+      trim: true,
+      maxlength: 255,
+      default: null,
+    },
+
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+
+    state: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+
+    postalCode: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 15,
+    },
+
+    country: {
+      type: String,
+      default: "IN",
+      trim: true,
+      maxlength: 100,
+    },
+
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
+
+// ✅ Ensure only one default address per user
+addressSchema.index(
+  { user: 1, isDefault: 1 },
+  { unique: true, partialFilterExpression: { isDefault: true } }
+);
+
+// ✅ Auto-unset previous default address
+addressSchema.pre("save", async function (next) {
+  if (this.isDefault) {
+    await mongoose.model("Address").updateMany(
+      { user: this.user, _id: { $ne: this._id } },
+      { $set: { isDefault: false } }
+    );
   }
   next();
 });
 
-const Address =mongoose.models.Address|| mongoose.model('Address', addressSchema);
-
-export default Address;
+export default mongoose.models.Address ||
+  mongoose.model("Address", addressSchema);
