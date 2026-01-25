@@ -34,8 +34,8 @@ const navigation = [
     name: "Products",
     icon: ShoppingBagIcon,
     children: [
-      { name: "Create Product", href: "/admin/products" },
-      { name: "All product", href: "/admin/products/getallProduct" },
+      { name: "Create Product", href: "/admin/products/create" },
+      { name: "All product", href: "/admin/products" },
       { name: "Variants", href: "/admin/variants" },
     ],
   },

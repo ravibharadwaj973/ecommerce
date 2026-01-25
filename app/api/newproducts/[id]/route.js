@@ -5,80 +5,16 @@ import { requireAuth } from "../../auth/auth";
 import cloudinary from "../../_lib/cloudnary";
 import { getPagination } from "../../utils/pagination";
 import mongoose from "mongoose";
-import Category from "../../models/cartegorymodel";
+import Category from "../../models/cartegorymodel"
 import slugify from "slugify";
 import ProductVariant from "../../models/ProductVariant";
-export async function GET(request) {
+ 
+export async function GET(request, context) {
   try {
     await connectDB();
+const {id}=await context.params;
+    const product = await newProduct.findById(id).lean();
 
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category");
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 12;
-
-    if (!category) {
-      return NextResponse.json(
-        { success: false, message: "Category is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(category)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid category id" },
-        { status: 400 }
-      );
-    }
-
-    const { skip, pageNumber, pageSize } = getPagination(page, limit);
-
-    const query = { category, isActive: true };
-
-    const [products, total] = await Promise.all([
-      newProduct.find(query)
-        .skip(skip)
-        .limit(pageSize)
-        .sort({ createdAt: -1 })
-        .lean(),
-
-      newProduct.countDocuments(query),
-    ]);
-
-    return NextResponse.json({
-      success: true,
-      data: products,
-      pagination: {
-        total,
-        page: pageNumber,
-        pages: Math.ceil(total / pageSize),
-        limit: pageSize,
-      },
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
-  }
-}
-export async function DELETE(request, context) {
-  try {
-    await connectDB();
-
-    // AUTH
-    const user = await requireAuth(request);
-    if (!user || !["admin", "vendor"].includes(user.role)) {
-      return NextResponse.json(
-        { success: false, message: "Not authorized" },
-        { status: 403 }
-      );
-    }
-
-    const { id } =await context.params;
-
-    // FIND PRODUCT
-    const product = await newProduct.findById(id);
     if (!product) {
       return NextResponse.json(
         { success: false, message: "Product not found" },
@@ -86,48 +22,11 @@ export async function DELETE(request, context) {
       );
     }
 
-    // CHECK IF VARIANTS EXIST
-    const variantCount = await ProductVariant.countDocuments({
-      product: id,
-    });
-
-    if (variantCount > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Cannot delete product. Delete variants first.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // DELETE CLOUDINARY IMAGES
-    if (product.images?.length > 0) {
-      for (const img of product.images) {
-        if (img.publicId) {
-          await cloudinary.uploader.destroy(img.publicId);
-        }
-      }
-    }
-
-    // DELETE PRODUCT
-    await newProduct.findByIdAndDelete(id);
-
-    return NextResponse.json({
-      success: true,
-      message: "Product deleted successfully",
-    });
+    return NextResponse.json({ success: true, data: product });
   } catch (error) {
-    console.error("Delete product error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
-
- 
 
 export async function PATCH(request, context) {
   try {

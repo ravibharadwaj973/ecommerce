@@ -1,298 +1,258 @@
+// app/admin/products/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
-type Category = {
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+import { useApi } from '../../hooks/useApi';
+import { Plus, Edit, Trash2, Eye, Package, Search, Filter } from 'lucide-react';
+import Image from 'next/image';
+
+type Product = {
   _id: string;
   name: string;
+  slug: string;
+  description: string;
+  category?: {
+    name: string;
+    slug: string;
+  };
+  images: Array<{
+    url: string;
+    isPrimary: boolean;
+    altText: string;
+  }>;
+  brand: string;
+  variantCount: number;
+  isPublished: boolean;
+  createdAt: string;
 };
-export default function CreateProductPage() {
-  const router = useRouter();
-  const { user } = useAuth();
 
-  const [loading, setLoading] = useState(false);
- const [categoryLevels, setCategoryLevels] = useState<any[][]>([]);
-const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+export default function ProductsPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
+  
+  const { 
+    data: products, 
+    loading, 
+    error,
+    fetchData: fetchProducts,
+    deleteData: deleteProduct 
+  } = useApi<Product[]>();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    categoryId: '',
-    brand: '',
-    features: [] as string[],
-    tags: [] as string[],
-    isPublished: true,
-  });
+  useEffect(() => {
+    fetchProducts('/api/newproducts');
+  }, []);
 
-  const [images, setImages] = useState<File[]>([]);
-  const [tempFeature, setTempFeature] = useState('');
-  const [tempTag, setTempTag] = useState('');
-
-  // ---------- ACCESS GUARD ----------
-  if (!user || !['admin', 'vendor'].includes(user.role)) {
-    return <p>Access denied</p>;
-  }
-
-  // ---------- HELPERS ----------
-  const addFeature = () => {
-    if (tempFeature && !formData.features.includes(tempFeature)) {
-      setFormData(prev => ({
-        ...prev,
-        features: [...prev.features, tempFeature],
-      }));
-      setTempFeature('');
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    
+    const result = await deleteProduct(`/api/newproducts/${id}`);
+    if (result) {
+      fetchProducts('/api/newproducts');
     }
   };
 
-  const removeFeature = (f: string) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.filter(x => x !== f),
-    }));
-  };
-
-  const addTag = () => {
-    if (tempTag && !formData.tags.includes(tempTag)) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tempTag],
-      }));
-      setTempTag('');
-    }
-  };
-
-  const removeTag = (t: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(x => x !== t),
-    }));
-  };
-useEffect(() => {
-  fetchCategoryChildren(null, 0);
-}, []);
-
-const fetchCategoryChildren = async (
-  parentId: string | null,
-  level: number
-) => {
-  const url = parentId
-    ? `/api/categories/children?parent=${parentId}`
-    : `/api/categories/children`;
-
-  const res = await fetch(url);
-  const json = await res.json();
-
-  if (!json.success || !json.data.length) return;
-
-  setCategoryLevels((prev) => {
-    const copy = [...prev];
-    copy[level] = json.data;
-    return copy;
-  });
-};
-
-const handleCategorySelect = async (
-  level: number,
-  categoryId: string
-) => {
-  // update selected path
-  setSelectedCategoryIds((prev) => {
-    const updated = prev.slice(0, level);
-    updated[level] = categoryId;
-
-    // ✅ SET FINAL CATEGORY ID (always last selected)
-    setFormData((f) => ({
-      ...f,
-      categoryId,
-    }));
-
-    return updated;
+  const filteredProducts = products?.filter(product => {
+    // Search filter
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.category?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Published filter
+    const matchesPublished = 
+      filterPublished === 'all' ||
+      (filterPublished === 'published' && product.isPublished) ||
+      (filterPublished === 'draft' && !product.isPublished);
+    
+    return matchesSearch && matchesPublished;
   });
 
-  // remove deeper dropdowns
-  setCategoryLevels((prev) => prev.slice(0, level + 1));
-
-  // load next level
-  await fetchCategoryChildren(categoryId, level + 1);
-};
-
-  // ---------- SUBMIT ----------
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const fd = new FormData();
-if (!formData.categoryId) {
-  alert("Please select a final category");
-  setLoading(false);
-  return;
-}
-      fd.append('name', formData.name);
-      fd.append('description', formData.description);
-      fd.append('categoryId', formData.categoryId);
-      fd.append('brand', formData.brand);
-      fd.append('features', JSON.stringify(formData.features));
-      fd.append('tags', JSON.stringify(formData.tags));
-      fd.append('isPublished', String(formData.isPublished));
-
-      images.forEach(img => fd.append('images', img));
-
-      const res = await fetch('/api/newproducts', {
-        method: 'POST',
-        body: fd,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-
-      alert('Product created');
-      router.push(`/admin/products/${data.data._id}/variants`);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ---------- UI ----------
   return (
-    <div className="containe text-black">
-      <h2  className=" text-black">Create Product</h2>
-
-      <form onSubmit={handleSubmit} className=" text-black">
-        <input
-          placeholder="Product name"
-          value={formData.name}
-          onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
-          required
-        />
-
-        <textarea
-          placeholder="Description"
-          value={formData.description}
-          onChange={e =>
-            setFormData(p => ({ ...p, description: e.target.value }))
-          }
-        />
-
-     {/* CATEGORY SELECTION */}
-<div className="space-y-2">
-  {categoryLevels.map((cats, level) => (
-    <select
-      key={level}
-      className="input"
-      value={selectedCategoryIds[level] || ""}
-      onChange={(e) =>
-        handleCategorySelect(level, e.target.value)
-      }
-     
-    >
-      <option value="">Select category</option>
-      {cats.map((cat) => (
-        <option key={cat._id} value={cat._id}>
-          {cat.name}
-        </option>
-      ))}
-    </select>
-  ))}
-</div>
-
-
-        <input
-          placeholder="Brand"
-          value={formData.brand}
-          onChange={e => setFormData(p => ({ ...p, brand: e.target.value }))}
-        />
-
-        {/* FEATURES */}
-        <div>
-          <input
-            placeholder="Feature"
-            value={tempFeature}
-            onChange={e => setTempFeature(e.target.value)}
-          />
-          <button type="button" onClick={addFeature}>
-            Add
-          </button>
-        </div>
-
-        {formData.features.map(f => (
-          <div key={f}>
-            {f}
-            <button type="button" onClick={() => removeFeature(f)}>
-              x
-            </button>
+   <div>
+      {/* Header with Actions */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <p className="text-gray-600 mt-1">
+              Manage your product catalog ({filteredProducts?.length || 0} products)
+            </p>
           </div>
-        ))}
-
-        {/* TAGS */}
-        <div>
-          <input
-            placeholder="Tag"
-            value={tempTag}
-            onChange={e => setTempTag(e.target.value)}
-          />
-          <button type="button" onClick={addTag}>
-            Add
-          </button>
-        </div>
-
-        {formData.tags.map(t => (
-          <div key={t}>
-            {t}
-            <button type="button" onClick={() => removeTag(t)}>
-              x
-            </button>
-          </div>
-        ))}
-
-        {/* IMAGES */}
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={e =>
-            e.target.files && setImages(Array.from(e.target.files))
-          }
-        />
-
-        <label>
-          <input
-            type="checkbox"
-            checked={formData.isPublished}
-            onChange={e =>
-              setFormData(p => ({ ...p, isPublished: e.target.checked }))
-            }
-          />
-          Publish
-        </label>
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Product'}
-        </button>
-      </form>
-
-      {/* SIMPLE CSS */}
-      <style jsx>{`
-        .container {
-          max-width: 500px;
-          margin: 20px auto;
           
-        }
-        input,
-        textarea,
-        button {
-          display: block;
-          width: 100%;
-          margin-bottom: 10px;
-          padding: 6px;
-        }
-        button {
-          cursor: pointer;
-        }
-      `}</style>
-    </div>
+          <Link
+            href="/admin/products/create"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </Link>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Products
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, brand, or category..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <div className="flex gap-2">
+                {['all', 'published', 'draft'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterPublished(status as any)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      filterPublished === status
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading products...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts?.map((product) => (
+            <div
+              key={product._id}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {/* Product Image */}
+              <div className="relative h-48 bg-gray-100">
+                {product.images?.[0]?.url ? (
+                  <img
+                    src={product.images[0].url}
+                    alt={product.images[0].altText || product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-12 h-12 text-gray-300" />
+                  </div>
+                )}
+                
+                {/* Status Badge */}
+                <span className={`absolute top-3 right-3 px-2 py-1 text-xs rounded-full ${
+                  product.isPublished
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {product.isPublished ? 'Published' : 'Draft'}
+                </span>
+              </div>
+
+              {/* Product Info */}
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 line-clamp-1">
+                  {product.name}
+                </h3>
+                
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-sm text-gray-600">
+                    {product.category?.name || 'Uncategorized'}
+                  </span>
+                  {product.brand && (
+                    <>
+                      <span className="text-gray-300">•</span>
+                      <span className="text-sm text-gray-600">{product.brand}</span>
+                    </>
+                  )}
+                </div>
+
+                <p className="text-gray-600 text-sm mt-3 line-clamp-2">
+                  {product.description || 'No description'}
+                </p>
+
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-500">
+                    {product.variantCount || 0} variants
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/products/${product._id}`}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Link>
+                    
+                    <Link
+                      href={`/admin/products/${product._id}/edit`}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Link>
+                    
+                    <button
+                      onClick={() => handleDelete(product._id, product.name)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && filteredProducts?.length === 0 && (
+        <div className="text-center py-12">
+          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+          <p className="text-gray-600 mb-6">
+            {searchQuery || filterPublished !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Get started by creating your first product'}
+          </p>
+          <Link
+            href="/admin/products/create"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Create Product
+          </Link>
+        </div>
+      )}
+   </div>
   );
 }
