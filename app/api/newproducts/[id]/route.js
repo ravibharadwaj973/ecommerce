@@ -117,3 +117,66 @@ export async function PATCH(request, context) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
+export async function DELETE(request, context) {
+  try {
+    await connectDB();
+
+    // ---------- AUTH ----------
+    const user = await requireAuth(request);
+    if (user instanceof NextResponse) return user;
+
+    if (!["admin", "vendor"].includes(user.role)) {
+      return NextResponse.json(
+        { success: false, message: "Not authorized" },
+        { status: 403 }
+      );
+    }
+
+    const { id } =await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Product ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // ---------- FIND PRODUCT ----------
+    const product = await newProduct.findById(id);
+
+    if (!product) {
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 }
+      );
+    }
+
+    // ---------- DELETE CLOUDINARY IMAGES ----------
+    if (product.images?.length > 0) {
+      for (const img of product.images) {
+        if (img.publicId) {
+          try {
+            await cloudinary.uploader.destroy(img.publicId);
+          } catch (err) {
+            console.warn("Cloudinary delete failed:", err);
+          }
+        }
+      }
+    }
+
+    // ---------- DELETE PRODUCT ----------
+    await newProduct.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+
+  } catch (error) {
+    console.error("Delete product error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 }
+    );
+  }
+}

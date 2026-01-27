@@ -42,13 +42,17 @@ export default function CategoriesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState<{ id: string; name: string } | null>(null);
 
   const { 
-    data: categories, 
+   data: categoriesRaw,
     loading, 
     error,
     fetchData: fetchCategories,
     deleteData: deleteCategory 
   } = useApi<Category[]>();
 
+  
+const categories = Array.isArray(categoriesRaw)
+  ? categoriesRaw
+  : categoriesRaw?.data || [];
   // Fetch categories based on current parent
   useEffect(() => {
     const url = currentParent 
@@ -136,20 +140,22 @@ export default function CategoriesPage() {
     }
   };
 
-  const filteredCategories = categories?.filter(cat => {
-    // Search filter
-    const matchesSearch = cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         cat.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         cat.slug.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Active filter
-    const matchesActive = 
-      filterActive === 'all' ||
-      (filterActive === 'active' && cat.isActive) ||
-      (filterActive === 'inactive' && !cat.isActive);
-    
-    return matchesSearch && matchesActive;
-  });
+ const filteredCategories = Array.isArray(categories)
+  ? categories.filter(cat => {
+      const matchesSearch =
+        (cat.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (cat.slug || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (cat.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesActive =
+        filterActive === "all" ||
+        (filterActive === "active" && cat.isActive) ||
+        (filterActive === "inactive" && !cat.isActive);
+
+      return matchesSearch && matchesActive;
+    })
+  : [];
+
 
   const renderCategoryItem = (category: Category, level: number = 0) => {
     const hasChildren = category.children && category.children.length > 0;

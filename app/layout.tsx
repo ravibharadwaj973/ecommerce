@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { CartProvider } from './context/CartContext';
 import { OrdersProvider } from "./context/OrdersContext";
 import { WishlistProvider } from "./context/wishlist";
+import Header from "./components/header";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <Header />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -103,21 +103,30 @@ const postData = useCallback(async (
     });
   }, [fetchData]);
 
-  const patchData = useCallback(async (
-    url: string,
-    body: any,
-    options?: RequestInit
-  ) => {
-    return fetchData(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: JSON.stringify(body),
-      ...options,
-    });
-  }, [fetchData]);
+const patchData = useCallback(async (
+  url: string,
+  body?: any,
+  options?: RequestInit
+) => {
+
+  const isFormData = body instanceof FormData;
+
+  return fetchData(url, {
+    method: 'PATCH',
+    body: isFormData ? body : JSON.stringify(body),
+
+    headers: isFormData
+      ? options?.headers // DO NOT set Content-Type manually
+      : {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+
+    ...options,
+  });
+
+}, [fetchData]);
+
 
   const deleteData = useCallback(async (
     url: string,

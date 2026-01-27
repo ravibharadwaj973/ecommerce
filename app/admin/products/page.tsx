@@ -33,13 +33,13 @@ export default function ProductsPage() {
   const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
   
   const { 
-    data: products, 
+     data: productsRaw, 
     loading, 
     error,
     fetchData: fetchProducts,
     deleteData: deleteProduct 
   } = useApi<Product[]>();
-
+const products = Array.isArray(productsRaw) ? productsRaw : [];
   useEffect(() => {
     fetchProducts('/api/newproducts');
   }, []);

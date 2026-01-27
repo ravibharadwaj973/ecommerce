@@ -41,11 +41,33 @@ export default function CreateVariantsPage() {
     fetchData: fetchProduct,
   } = useApi<Product>();
   const {
-   data: attributesRaw,
+    data: attributesRaw,
     loading: attributesLoading,
     fetchData: fetchAttributes,
   } = useApi<Attribute[]>();
-  const attributes = Array.isArray(attributesRaw) ? attributesRaw : [];
+  const attributeValues = Array.isArray(attributesRaw) ? attributesRaw : [];
+
+const attributes = Object.values(
+  attributeValues.reduce((acc: any, item: AttributeValue) => {
+    const attrId = item.attribute._id;
+
+    if (!acc[attrId]) {
+      acc[attrId] = {
+        _id: attrId,
+        name: item.attribute.name,
+        values: [],
+      };
+    }
+
+    acc[attrId].values.push({
+      _id: item._id,
+      value: item.value,
+    });
+
+    return acc;
+  }, {})
+);
+
 
   const { loading: creating, postData: createVariant } = useApi();
 
@@ -61,7 +83,7 @@ export default function CreateVariantsPage() {
   useEffect(() => {
     if (productId) {
       fetchProduct(`/api/newproducts/${productId}`);
-      fetchAttributes("/api/newproducts/attributes");
+      fetchAttributes("/api/newproducts/attribute-values");
     }
   }, [productId]);
 
@@ -127,8 +149,8 @@ export default function CreateVariantsPage() {
       let result: any[] = [];
 
       for (const valueId of values) {
-      const attribute = attributes.find(a => a._id === attributeId);
-const value = (attribute?.values || []).find(v => v._id === valueId);
+        const attribute = attributes.find((a) => a._id === attributeId);
+        const value = (attribute?.values || []).find((v) => v._id === valueId);
 
         if (attribute && value) {
           result = result.concat(
@@ -199,7 +221,7 @@ const value = (attribute?.values || []).find(v => v._id === valueId);
       toast.error(error.message || "Failed to create variants");
     }
   };
-
+console.log(attributes)
   const totalVariants = generatedVariants.length;
   const totalStock = Number(stock) * totalVariants;
   const totalValue = Number(price) * totalStock;
@@ -325,7 +347,9 @@ const value = (attribute?.values || []).find(v => v._id === valueId);
                         {(selected[attr._id] || []).length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {(selected[attr._id] || []).map((vId) => {
-                             const val = (attr.values || []).find(v => v._id === vId);
+                              const val = (attr.values || []).find(
+                                (v) => v._id === vId,
+                              );
                               return (
                                 <span
                                   key={vId}
@@ -633,7 +657,9 @@ const value = (attribute?.values || []).find(v => v._id === valueId);
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {valueIds.map((vId) => {
-                           const value = (attribute.values || []).find(v => v._id === vId);
+                            const value = (attribute.values || []).find(
+                              (v) => v._id === vId,
+                            );
                             return value ? (
                               <span
                                 key={vId}
