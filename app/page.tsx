@@ -14,6 +14,38 @@ import { ShieldCheck, Truck, CreditCard, Sparkles } from "lucide-react";
 import Footer from "./components/footer";
 import DiscountVoucher from "./components/token";
 import HeroSlider from "./components/Heroslider";
+import CategorySection from "./components/category";
+import FeaturedRow from "./components/FeaturedRows";
+export const FEATURED_COLLECTIONS = {
+  women: [
+    {
+      title: "Women Jeans",
+      categoryId: "69770389f4ef7b0470021e3a",
+      tagline: "Essential denim for every silhouette",
+      slug: "women-jeans",
+    },
+    {
+      title: "Women Full Sleeve Tops",
+      categoryId: "6976f901f4ef7b0470021b85",
+      tagline: "Urban styles for the modern edge",
+      slug: "women-streetwear",
+    },
+  ],
+  men: [
+    {
+      title: "Baggy Jeans",
+      categoryId: "69773f73ea1f4c5962c0944f",
+      tagline: "Relaxed fits for ultimate comfort",
+      slug: "baggy-jeans",
+    },
+    {
+      title: "Joggers & Track Pants",
+      categoryId: "69770a44f4ef7b0470021f71",
+      tagline: "Athleisure essentials for your daily run",
+      slug: "joggers-track-pants",
+    },
+  ],
+};
 type Category = {
   _id: string;
   name: string;
@@ -96,42 +128,57 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [isAutoPlaying]);
 
-  const [activeGender, setActiveGender] = useState<'men' | 'women'>('men');
+  const [activeGender, setActiveGender] = useState<"men" | "women">("men");
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <div className="bg-white py-4 border-b border-gray-100 flex justify-center">
-      <div className="bg-white py-4 border-b border-gray-100 flex justify-center">
-        <div className="relative bg-gray-100 p-1 rounded-full flex items-center w-64 h-12 shadow-inner">
-          <div
-            className={`absolute h-10 w-[124px] bg-white rounded-full shadow-md transition-all duration-300 ease-out ${
-              activeGender === "men" ? "translate-x-0" : "translate-x-[124px]"
-            }`}
-          />
+        <div className="bg-white py-4 border-b border-gray-100 flex justify-center">
+          <div className="relative bg-gray-100 p-1 rounded-full flex items-center w-64 h-12 shadow-inner">
+            <div
+              className={`absolute h-10 w-[124px] bg-white rounded-full shadow-md transition-all duration-300 ease-out ${
+                activeGender === "men" ? "translate-x-0" : "translate-x-[124px]"
+              }`}
+            />
 
-          <button
-            onClick={() => setActiveGender("men")} // Update activeGender
-            className={`relative z-10 flex-1 text-sm font-bold tracking-widest uppercase transition-colors duration-300 ${
-              activeGender === "men" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Men
-          </button>
+            <button
+              onClick={() => setActiveGender("men")} // Update activeGender
+              className={`relative z-10 flex-1 text-sm font-bold tracking-widest uppercase transition-colors duration-300 ${
+                activeGender === "men"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Men
+            </button>
 
-          <button
-            onClick={() => setActiveGender("women")} // Update activeGender
-            className={`relative z-10 flex-1 text-sm font-bold tracking-widest uppercase transition-colors duration-300 ${
-              activeGender === "women" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Women
-          </button>
+            <button
+              onClick={() => setActiveGender("women")} // Update activeGender
+              className={`relative z-10 flex-1 text-sm font-bold tracking-widest uppercase transition-colors duration-300 ${
+                activeGender === "women"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Women
+            </button>
+          </div>
         </div>
       </div>
-      </div>
       <HeroSlider activeGender={activeGender} />
-<DiscountVoucher/>
+      {FEATURED_COLLECTIONS[activeGender][0] && (
+        <FeaturedRow
+          categoryId={FEATURED_COLLECTIONS[activeGender][0].categoryId}
+          title={FEATURED_COLLECTIONS[activeGender][0].title}
+        />
+      )}
+      <CategorySection activeGender={activeGender} />
+      <DiscountVoucher />
+      {FEATURED_COLLECTIONS[activeGender][1] && (
+        <FeaturedRow
+          categoryId={FEATURED_COLLECTIONS[activeGender][1].categoryId}
+          title={FEATURED_COLLECTIONS[activeGender][1].title}
+        />
+      )}
       {/* Additional Content Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
@@ -177,7 +224,7 @@ export default function HomePage() {
         </div>
       </section>
 
-  <Footer/>
+      <Footer />
     </div>
   );
 }

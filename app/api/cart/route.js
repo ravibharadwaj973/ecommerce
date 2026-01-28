@@ -5,7 +5,7 @@ import { requireAuth } from "../auth/auth";
 import Cart from "../models/cart";
 import ProductVariant from "../models/ProductVariant";
 
- export async function POST(request) {
+export async function POST(request) {
   await connectDB();
   const user = await requireAuth(request);
   if (user instanceof NextResponse) return user;
@@ -14,18 +14,24 @@ import ProductVariant from "../models/ProductVariant";
 
   const variant = await ProductVariant.findById(variantId);
   if (!variant || !variant.isActive) {
-    return NextResponse.json({ success: false, message: "Invalid variant" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "Invalid variant" },
+      { status: 400 },
+    );
   }
 
   if (variant.stock < quantity) {
-    return NextResponse.json({ success: false, message: "Insufficient stock" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "Insufficient stock" },
+      { status: 400 },
+    );
   }
 
   let cart = await Cart.findOne({ user: user.id });
   if (!cart) cart = await Cart.create({ user: user.id });
 
   const existingItem = cart.items.find(
-    (i) => i.variant.toString() === variantId
+    (i) => i.variant.toString() === variantId,
   );
 
   if (existingItem) {
@@ -53,11 +59,10 @@ export async function GET(request) {
   const user = await requireAuth(request);
   if (user instanceof NextResponse) return user;
 
-  const cart = await Cart.findOne({ user: user.id })
-    .populate({
-      path: "items.variant",
-      populate: { path: "product" },
-    });
+  const cart = await Cart.findOne({ user: user.id }).populate({
+    path: "items.variant",
+    populate: { path: "product" },
+  });
 
   return NextResponse.json({ success: true, data: cart });
 }
@@ -70,14 +75,17 @@ export async function PUT(request) {
   const { variantId, quantity } = await request.json();
 
   const cart = await Cart.findOne({ user: user.id });
-  const item = cart.items.find(i => i.variant.toString() === variantId);
+  const item = cart.items.find((i) => i.variant.toString() === variantId);
 
   if (!item) {
-    return NextResponse.json({ success: false, message: "Item not found" }, { status: 404 });
+    return NextResponse.json(
+      { success: false, message: "Item not found" },
+      { status: 404 },
+    );
   }
 
   if (quantity === 0) {
-    cart.items = cart.items.filter(i => i.variant.toString() !== variantId);
+    cart.items = cart.items.filter((i) => i.variant.toString() !== variantId);
   } else {
     item.quantity = quantity;
     item.subtotal = quantity * item.priceAtAddTime;

@@ -36,7 +36,7 @@ export async function POST(request) {
       !phone ||
       !addressLine1 ||
       !city ||
-      !state ||
+    
       !postalCode
     ) {
       return NextResponse.json(

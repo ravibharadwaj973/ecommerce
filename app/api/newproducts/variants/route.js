@@ -161,31 +161,48 @@ export async function GET(request) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const product = searchParams.get("product");
+    const productId = searchParams.get("product"); // This is the product ID from URL
     const page = searchParams.get("page") || 1;
     const limit = searchParams.get("limit") || 10;
 
-    if (!product) {
+    if (!productId) {
       return NextResponse.json(
-        { success: false, message: "Product ID required" },
+        { success: false, message: "Product ID is required" },
         { status: 400 }
       );
     }
 
     const { skip, pageNumber, pageSize } = getPagination(page, limit);
 
-    const [variants, total] = await Promise.all([
-      ProductVariant.find({ product, isActive: true })
+    // ✅ FETCH EVERYTHING IN PARALLEL
+    const [productDetails, variants, total] = await Promise.all([
+      // 1. Get the Main Product Info
+      newProduct.findById(productId).lean(),
+      
+      // 2. Get the Variants
+      ProductVariant.find({ product: productId, isActive: true })
         .skip(skip)
         .limit(pageSize)
         .populate("attributes.attribute")
-        .populate("attributes.value"),
+        .populate("attributes.value")
+        .lean(),
 
-      ProductVariant.countDocuments({ product, isActive: true }),
+      // 3. Get count for pagination
+      ProductVariant.countDocuments({ product: productId, isActive: true }),
     ]);
+
+    // Check if the product actually exists
+    if (!productDetails) {
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
+      // ✅ Return both product info and variants
+      product: productDetails, 
       data: variants,
       pagination: {
         total,
@@ -195,6 +212,7 @@ export async function GET(request) {
       },
     });
   } catch (error) {
+    console.error("Variant fetch error:", error);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }

@@ -1,10 +1,10 @@
-// models/Wishlist.js
 import mongoose from 'mongoose';
+
 
 const wishlistItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    ref: 'newProduct', // UPDATED: Changed from 'Product' to 'NewProduct'
     required: true
   },
   addedAt: {
@@ -18,7 +18,7 @@ const wishlistSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true
+     unique:true
   },
   items: [wishlistItemSchema],
   createdAt: {
@@ -29,11 +29,10 @@ const wishlistSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  // This automatically handles createdAt and updatedAt without the .pre('save') hook
+  timestamps: true 
 });
 
-wishlistSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
 
 export default mongoose.models.Wishlist || mongoose.model('Wishlist', wishlistSchema);

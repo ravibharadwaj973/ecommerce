@@ -83,3 +83,19 @@ body {
 .glow-border {
   animation: glow 2s ease-in-out infinite;
 }
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  /* Adjust '15s' to make it faster or slower */
+  animation: marqueeScroll 70s linear infinite;
+}
+
+/* Optional: Stops sliding when user hovers */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

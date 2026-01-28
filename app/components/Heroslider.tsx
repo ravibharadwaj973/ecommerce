@@ -5,16 +5,43 @@ import Image from 'next/image';
 // Assuming images are in: public/images/hero/men1.jpg, etc.
 const HERO_IMAGES = {
   men: [
-    { id: 1, src: '/images/hero/men1.jpg', alt: 'Men Fashion 1' },
-    { id: 2, src: '/images/hero/men2.jpg', alt: 'Men Fashion 2' },
-    { id: 3, src: '/images/hero/men3.jpg', alt: 'Men Fashion 3' },
-    { id: 4, src: '/images/hero/men4.jpg', alt: 'Men Fashion 4' },
+    { id: 1, src: '/images/hero/men1.png', alt: 'Men Fashion 1' },
+    { id: 2, src: '/images/hero/men2.png', alt: 'Men Fashion 2' },
+    { id: 3, src: '/images/hero/men3.png', alt: 'Men Fashion 3' },
+    { id: 4, src: '/images/hero/men4.png', alt: 'Men Fashion 4' },
+    { id: 4, src: '/images/hero/men5.png', alt: 'Men Fashion 4' },
+    { id: 1, src: '/images/hero/men1.png', alt: 'Men Fashion 1' },
+    { id: 2, src: '/images/hero/men2.png', alt: 'Men Fashion 2' },
+    { id: 3, src: '/images/hero/men3.png', alt: 'Men Fashion 3' },
+    { id: 4, src: '/images/hero/men4.png', alt: 'Men Fashion 4' },
+    { id: 4, src: '/images/hero/men5.png', alt: 'Men Fashion 4' },
+    { id: 1, src: '/images/hero/men1.png', alt: 'Men Fashion 1' },
+    { id: 2, src: '/images/hero/men2.png', alt: 'Men Fashion 2' },
+    { id: 3, src: '/images/hero/men3.png', alt: 'Men Fashion 3' },
+    { id: 4, src: '/images/hero/men4.png', alt: 'Men Fashion 4' },
+    { id: 4, src: '/images/hero/men5.png', alt: 'Men Fashion 4' },
+    
   ],
   women: [
-    { id: 1, src: '/images/hero/women1.jpg', alt: 'Women Fashion 1' },
-    { id: 2, src: '/images/hero/women2.jpg', alt: 'Women Fashion 2' },
-    { id: 3, src: '/images/hero/women3.jpg', alt: 'Women Fashion 3' },
-    { id: 4, src: '/images/hero/women4.jpg', alt: 'Women Fashion 4' },
+    { id: 1, src: '/images/hero/women1.png', alt: 'Women Fashion 1' },
+    { id: 2, src: '/images/hero/women2.png', alt: 'Women Fashion 2' },
+    { id: 3, src: '/images/hero/women3.png', alt: 'Women Fashion 3' },
+    { id: 4, src: '/images/hero/women4.png', alt: 'Women Fashion 4' },
+    { id: 5, src: '/images/hero/women5.png', alt: 'Women Fashion 4' },
+    { id: 6, src: '/images/hero/women6.png', alt: 'Women Fashion 4' },
+    { id: 7, src: '/images/hero/women1.png', alt: 'Women Fashion 7' },
+    { id: 8, src: '/images/hero/women2.png', alt: 'Women Fashion 8' },
+    { id: 9, src: '/images/hero/women3.png', alt: 'Women Fashion 9' },
+    { id: 10, src: '/images/hero/women4.png', alt: 'Women Fashion 10' },
+    { id: 11, src: '/images/hero/women5.png', alt: 'Women Fashion 11' },
+    { id: 12, src: '/images/hero/women6.png', alt: 'Women Fashion 12' },
+    { id: 13, src: '/images/hero/women1.png', alt: 'Women Fashion 13' },
+    { id: 14, src: '/images/hero/women2.png', alt: 'Women Fashion 14' },
+    { id: 15, src: '/images/hero/women3.png', alt: 'Women Fashion 15' },
+    { id: 16, src: '/images/hero/women4.png', alt: 'Women Fashion 16' },
+    { id: 17, src: '/images/hero/women5.png', alt: 'Women Fashion 17' },
+    { id: 18, src: '/images/hero/women6.png', alt: 'Women Fashion 18' },
+   
   ]
 };
 

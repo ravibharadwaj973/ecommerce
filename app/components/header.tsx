@@ -155,14 +155,17 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-1 md:gap-3">
+           <Link href={'/wishlist'}>
             <button className="p-2.5 hover:bg-gray-50 rounded-full transition-colors relative group">
               <Heart className="w-5 h-5 text-gray-700 group-hover:text-red-500 transition-colors" />
               <span className="absolute top-1.5 right-1.5 bg-red-500 text-[9px] font-bold text-white w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">2</span>
             </button>
-            <button className="p-2.5 hover:bg-gray-50 rounded-full transition-colors relative group">
+           </Link>
+          <Link href={'/cart'}>
+           <button  className="p-2.5 hover:bg-gray-50 rounded-full transition-colors relative group">
               <ShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition-colors" />
               <span className="absolute top-1.5 right-1.5 bg-blue-600 text-[9px] font-bold text-white w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">3</span>
-            </button>
+            </button></Link>
           </div>
         </div>
       </div>

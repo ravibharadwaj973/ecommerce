@@ -133,11 +133,11 @@ export default function EditCategoryPage() {
     setLoading(true);
 
     try {
-      if (!formData.name.trim()) {
-        toast.error('Category name is required');
-        setLoading(false);
-        return;
-      }
+      // if (!formData.name.trim()) {
+      //   toast.error('Category name is required');
+      //   setLoading(false);
+      //   return;
+      // }
 
       const fd = new FormData();
       fd.append('name', formData.name);
@@ -306,7 +306,7 @@ export default function EditCategoryPage() {
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        required
+                       
                         placeholder="Enter category name"
                         className="w-full text-black  px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />

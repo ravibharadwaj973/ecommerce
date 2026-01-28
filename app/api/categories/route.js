@@ -1,7 +1,7 @@
 // app/api/categories/route.js
 import { NextResponse } from "next/server";
 import Category from "../models/cartegorymodel";
-import Product from "../models/Product";
+import newProduct from "../models/newproduct";
 import { connectDB } from "../config/db";
 import { requireAuth } from "../auth/auth";
 import slugify from "slugify";
@@ -150,6 +150,7 @@ export async function GET(request) {
 
     const skip = (page - 1) * limit;
 
+const r=query.parentCategory;
     // Fetch categories
     const categories = await Category.find(query)
       .sort({ name: 1 })
@@ -163,10 +164,10 @@ export async function GET(request) {
     if (includeProducts) {
       const categoriesWithProducts = await Promise.all(
         categories.map(async (category) => {
-          const products = await Product.find({
-            category: category._id, // ✅ FIXED FIELD
+          const products = await newProduct.find({
+            category: r, // ✅ FIXED FIELD
             ...(onlyActive && { isPublished: true }),
-          }).select("name price images stock isPublished");
+          }).select("name images isActive");
 
           return { ...category, products };
         })
@@ -187,7 +188,7 @@ export async function GET(request) {
     // ---------------- PRODUCT COUNT ONLY ----------------
     const categoriesWithCount = await Promise.all(
       categories.map(async (category) => {
-        const productCount = await Product.countDocuments({
+        const productCount = await newProduct.countDocuments({
           category: category._id, // ✅ FIXED FIELD
           ...(onlyActive && { isPublished: true }),
         });
