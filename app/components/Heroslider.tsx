@@ -1,58 +1,60 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
-const slides = [
-  '/hero/slide1.jpg',
-  '/hero/slide2.jpg',
-  '/hero/slide3.jpg',
-  '/hero/slide4.jpg',
-  '/hero/slide5.jpg',
-  '/hero/slide6.jpg',
-];
+// Assuming images are in: public/images/hero/men1.jpg, etc.
+const HERO_IMAGES = {
+  men: [
+    { id: 1, src: '/images/hero/men1.jpg', alt: 'Men Fashion 1' },
+    { id: 2, src: '/images/hero/men2.jpg', alt: 'Men Fashion 2' },
+    { id: 3, src: '/images/hero/men3.jpg', alt: 'Men Fashion 3' },
+    { id: 4, src: '/images/hero/men4.jpg', alt: 'Men Fashion 4' },
+  ],
+  women: [
+    { id: 1, src: '/images/hero/women1.jpg', alt: 'Women Fashion 1' },
+    { id: 2, src: '/images/hero/women2.jpg', alt: 'Women Fashion 2' },
+    { id: 3, src: '/images/hero/women3.jpg', alt: 'Women Fashion 3' },
+    { id: 4, src: '/images/hero/women4.jpg', alt: 'Women Fashion 4' },
+  ]
+};
 
-export default function HeroSlider() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+interface HeroSliderProps {
+  activeGender: 'men' | 'women';
+}
 
-  // Auto slide every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, []);
+export default function HeroSlider({ activeGender }: HeroSliderProps) {
+  const slides = HERO_IMAGES[activeGender];
 
   return (
-    <section className="relative w-full h-[70vh] overflow-hidden">
-      {/* Slides Container */}
-      <div
-        className="flex h-full transition-transform duration-700 ease-in-out"
-        style={{
-          transform: `translateX(-${currentIndex * 100}%)`,
-        }}
-      >
-        {slides.map((src, index) => (
-          <div
-            key={index}
-            className="min-w-full h-full bg-center bg-cover"
-            style={{ backgroundImage: `url(${src})` }}
-          />
-        ))}
-      </div>
+    <section className="relative w-full overflow-hidden bg-white py-10">
+      {/* Advertisement Label */}
 
-      {/* Overlay (optional but recommended for hero) */}
-      <div className="absolute inset-0 bg-black/30" />
-
-      {/* Hero Text */}
-      <div className="absolute inset-0 flex items-center justify-center text-center text-white px-4">
-        <div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Shop Smarter, Live Better
-          </h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto">
-            Discover top products across all categories
-          </p>
+      {/* The Marquee Container */}
+      <div className="flex overflow-hidden">
+        <div className="animate-marquee flex gap-4">
+          {/* Render images twice for an infinite loop */}
+          {[...slides, ...slides].map((slide, index) => (
+            <div 
+              key={`${activeGender}-${index}`} 
+              className="relative w-[300px] md:w-[450px] h-[500px] md:h-[600px] shrink-0 overflow-hidden rounded-2xl group"
+            >
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                fill
+                priority={index < 2}
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              {/* Overlay Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              
+              {/* Advertisement Text on Photo */}
+              <div className="absolute bottom-8 left-8 text-white">
+                <p className="text-xs font-bold uppercase tracking-widest mb-1">Trending Now</p>
+                <h4 className="text-2xl font-black uppercase tracking-tighter">Season Essentials</h4>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
