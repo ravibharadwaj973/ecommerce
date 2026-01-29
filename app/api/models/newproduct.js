@@ -9,7 +9,6 @@ const NewproductSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-
     name: {
       type: String,
       required: true,
@@ -34,7 +33,6 @@ const NewproductSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
-
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
@@ -43,14 +41,25 @@ const NewproductSchema = new mongoose.Schema(
     brand: String,
     tags: [],
     description: String,
-
     isActive: {
       type: Boolean,
       default: true,
     },
   },
-  { timestamps: true },
+  { 
+    timestamps: true,
+    // Move toJSON/toObject settings directly into the schema options for cleaner code
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  },
 );
+
+// Use NewproductSchema (matching the name above)
+NewproductSchema.virtual('variants', {
+  ref: 'ProductVariant',    // Must match the exact string in Variant model
+  localField: '_id',
+  foreignField: 'product',  // Must match the field in ProductVariant schema
+});
 
 export default mongoose.models.newProduct ||
   mongoose.model("newProduct", NewproductSchema);

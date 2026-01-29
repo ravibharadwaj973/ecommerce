@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Loader2, ShoppingBag, Heart } from "lucide-react";
 import { toast } from "sonner";
+import ProductCard from "./ProductCard";
 
 interface Product {
   _id: string;
@@ -104,56 +105,16 @@ export default function FeaturedRow({ categoryId, title }: { categoryId: string;
         </Link>
       </div>
 
-      <div className="flex overflow-x-auto gap-4 px-4 pb-4 no-scrollbar">
-        {products.map((product) => {
-          const displayImage = product.images.find(img => img.isPrimary)?.url || product.images[0]?.url;
-          const isLiked = wishlistIds.includes(product._id);
-
-          return (
-            <Link 
-              key={product._id} 
-              href={`/products/${product._id}`}
-              className="group w-48 md:w-56 shrink-0"
-            >
-              <div className="relative h-64 md:h-72 w-full overflow-hidden rounded-[2rem] bg-gray-50 border border-gray-100">
-                {displayImage && (
-                  <Image
-                    src={displayImage}
-                    alt={product.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                )}
-                
-                {/* Wishlist Heart Button */}
-                <button 
-                  onClick={(e) => toggleWishlist(e, product._id)}
-                  disabled={togglingId === product._id}
-                  className="absolute top-3 right-3 p-2.5 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-all z-10"
-                >
-                  <Heart 
-                    size={16} 
-                    fill={isLiked ? "#ef4444" : "none"} 
-                    className={`${isLiked ? "text-red-500" : "text-gray-400"} ${togglingId === product._id ? "animate-ping" : ""}`} 
-                  />
-                </button>
-
-                <div className="absolute bottom-3 right-3 p-2.5 bg-black rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300">
-                  <ShoppingBag size={16} className="text-white" />
-                </div>
-              </div>
-
-              <div className="mt-4 px-1">
-                <p className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em]">
-                  {product.brand}
-                </p>
-                <h3 className="text-sm font-bold text-gray-900 truncate uppercase tracking-tight mt-0.5">
-                  {product.name}
-                </h3>
-              </div>
-            </Link>
-          );
-        })}
+     <div className="flex overflow-x-auto gap-4 px-4 pb-4 no-scrollbar">
+        {products.map((product) => (
+          <ProductCard
+            key={product._id}
+            product={product}
+            isLiked={wishlistIds.includes(product._id)}
+            isToggling={togglingId === product._id}
+            onWishlistToggle={toggleWishlist}
+          />
+        ))}
       </div>
     </div>
   );

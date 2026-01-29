@@ -54,7 +54,7 @@ export default function CategorySection({ activeGender }: { activeGender: 'men' 
           {categories.map((cat) => (
             <Link 
               key={cat._id} 
-              href={`/shop/${cat.slug}`} 
+              href={`/cat/${cat._id}`} 
               className="group relative h-[200px] md:h-[400px] overflow-hidden rounded-2xl md:rounded-3xl bg-gray-100"
             >
               {/* Image check to prevent 'url of null' crash */}
