@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import Order from "@/models/Order";
-import ProductVariant from "@/models/ProductVariant";
+import Order from "../../models/order";
+import ProductVariant from "../../models/ProductVariant";
 
 export async function POST(request) {
   const body = await request.text();

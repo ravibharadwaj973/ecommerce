@@ -1,80 +1,55 @@
 // components/RegisterForm.jsx
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    role: 'customer',
-    dateOfBirth: ''
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "customer",
+    dateOfBirth: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-    const { user,register} = useAuth();
+  const [error, setError] = useState("");
+  const { user, register } = useAuth();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
-    useEffect(() => {
-      if (!loading && user) {
-        // // Check if user has vendor access      
-          router.push('/');  
-     }
-    }, [user, ]);
-      const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (!loading && user) {
+      // // Check if user has vendor access
+      router.push("/");
+    }
+  }, [user]);
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-console.log(formData)
-    const result = await register(formData);
+    setError("");
     
+    const result = (await register(formData)as {
+      success: boolean;
+      message: string;
+    });
+
     if (!result.success) {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
-  
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   setError('');
 
-  //   try {
-  //     const response = await fetch('/api/users/register', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(formData),
-  //     });
 
-  //     const data = await response.json();
-
-  //     if (data.success) {
-  //       toast.success(data.message)
-  //       // Redirect to dashboard or home page
-  //       router.push('/dashboard');
-  //     } else {
-  //       setError(data.message || 'Registration failed');
-  //     }
-  //   } catch (err) {
-  //     setError('An error occurred during registration');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -83,8 +58,11 @@ console.log(formData)
           Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+          Or{" "}
+          <Link
+            href="/login"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
             sign in to your existing account
           </Link>
         </p>
@@ -100,7 +78,10 @@ console.log(formData)
             )}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Full Name
               </label>
               <div className="mt-1">
@@ -118,7 +99,10 @@ console.log(formData)
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <div className="mt-1">
@@ -137,7 +121,10 @@ console.log(formData)
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1">
@@ -156,7 +143,10 @@ console.log(formData)
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Phone Number
               </label>
               <div className="mt-1">
@@ -172,10 +162,11 @@ console.log(formData)
               </div>
             </div>
 
-           
-
             <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="dateOfBirth"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Date of Birth
               </label>
               <div className="mt-1">
@@ -196,7 +187,7 @@ console.log(formData)
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent text-black rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
             </div>
           </form>
@@ -222,15 +213,15 @@ console.log(formData)
               </Link>
             </div>
           </div>
-                      <div className="mt-4">
-  <button
-    type="button"
-    onClick={() => window.location.href = "/api/auth/google"}
-    className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-  >
-    Continue with Google
-  </button>
-</div>
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/api/auth/google")}
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Continue with Google
+            </button>
+          </div>
         </div>
       </div>
     </div>

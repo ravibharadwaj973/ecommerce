@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/config/db";
-import Order from "@/models/Order";
-import { requireAuth } from "@/auth/auth";
+import { connectDB } from "../../config/db";
+import Order from "../../models/order";
+import { requireAuth } from "../../auth/auth";
 
 // @desc    Handle payment failure
 // @route   POST /api/payments/failure

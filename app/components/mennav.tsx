@@ -9,22 +9,23 @@ export interface Category {
   name: string;
   slug: string;
   subCategories?: SubCategory[];
+  id:string;
 }
 
 export interface NavSection {
-  id: "men" | "women";
+  id: "Men" | "Women";
   label: string;
   categories: Category[];
 }
 
 export const NAVIGATION_DATA: NavSection[] = [
   {
-    id: "men",
+    id: "Men",
     label: "Men",
     categories: [
       {
         name: "Bottomwears",
-        id: "6976fc10f4ef7b0470021c03",
+        id: "6977090df4ef7b0470021f14",
         slug: "bottomwears",
         subCategories: [
           { name: "Cargo Pant", slug: "cargo-pant" },
@@ -35,7 +36,7 @@ export const NAVIGATION_DATA: NavSection[] = [
       },
       {
         name: "Denim Jeans",
-        id: "6976fd3cf4ef7b0470021c3f",
+        id: "69773f50ea1f4c5962c09433",
         slug: "denim-jeans",
         subCategories: [
           { name: "Baggy Jeans", slug: "baggy-jeans" },
@@ -48,7 +49,7 @@ export const NAVIGATION_DATA: NavSection[] = [
       },
       {
         name: "Gym Wear",
-        id: "6976fc10f4ef7b0470021c03",
+        id: "69706c1e435cf01bff3cacaf",
         slug: "gym-wear",
         subCategories: [
           { name: "Gym Shorts", slug: "gym-shorts" },
@@ -59,7 +60,7 @@ export const NAVIGATION_DATA: NavSection[] = [
       },
       {
         name: "T-shirts",
-        id: "6976fc10f4ef7b0470021c03",
+        id: "69770857f4ef7b0470021ef3",
         slug: "t-shirts",
         subCategories: [
           { name: "Crew Neck T-Shirts", slug: "crew-neck" },
@@ -72,7 +73,7 @@ export const NAVIGATION_DATA: NavSection[] = [
       },
       {
         name: "Shirts",
-        id: "6976fc10f4ef7b0470021c03",
+        id: "6970670d435cf01bff3cac14",
         slug: "shirts",
         subCategories: [], // You can add Formal/Casual sub-items later
       },

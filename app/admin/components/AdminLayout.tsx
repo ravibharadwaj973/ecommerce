@@ -31,11 +31,11 @@ const vendorMenuItems = [
   { href: '/vendor/analytics', icon: BarChart3, label: 'Analytics' },
 ];
 
-export default function AdminLayout({ children, user }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const {user, logout } = useAuth();
 
   const isAdmin = user?.role === 'admin';
   const isVendor = user?.role === 'vendor';

@@ -6,8 +6,7 @@ import {
   ShoppingCartIcon,
   UsersIcon,
   ChartBarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon
+
 } from '@heroicons/react/24/outline';
 
 interface SalesData {

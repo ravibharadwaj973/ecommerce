@@ -44,7 +44,7 @@ export default function AdminVariantsPage() {
       setLoading(false);
     }
   };
-console.log(variants)
+
   useEffect(() => {
     fetchVariants();
   }, []);

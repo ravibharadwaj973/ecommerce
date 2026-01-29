@@ -3,13 +3,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+interface Message {
+  id: number;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+}
+
 export default function Chatbot() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  // 1. Properly type the state
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const messagesEndRef = useRef(null);
+
+  // 2. FIX: Type the ref as HTMLDivElement
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -19,7 +29,7 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize with welcome message
+  // Welcome message logic
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
@@ -31,15 +41,17 @@ export default function Chatbot() {
         }
       ]);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, messages.length]); // Added messages.length to dependencies
 
-  const sendMessage = async (e) => {
+  // 3. Type the event as React.FormEvent
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
-    const userMessage = {
+    const currentInput = inputMessage; // Capture before clearing
+    const userMessage: Message = {
       id: Date.now(),
-      text: inputMessage,
+      text: currentInput,
       isUser: true,
       timestamp: new Date()
     };
@@ -51,27 +63,24 @@ export default function Chatbot() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: inputMessage }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: currentInput }),
       });
-console.log(response)
+
       const data = await response.json();
 
-      const botMessage = {
+      const botMessage: Message = {
         id: Date.now() + 1,
-        text: data.reply,
+        text: data.reply || "I'm sorry, I couldn't process that.",
         isUser: false,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = {
+      const errorMessage: Message = {
         id: Date.now() + 1,
-        text: "Sorry, I'm having trouble responding right now. Please try again later.",
+        text: "Sorry, I'm having trouble connecting. Please try again later.",
         isUser: false,
         timestamp: new Date()
       };
@@ -84,8 +93,8 @@ console.log(response)
   const clearChat = () => {
     setMessages([
       {
-        id: 1,
-        text: `Hello${user ? `, ${user.name}` : ''}! I'm your AI assistant. How can I help you today?`,
+        id: Date.now(),
+        text: `Chat cleared. How else can I help you?`,
         isUser: false,
         timestamp: new Date()
       }
@@ -96,7 +105,7 @@ console.log(response)
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-200 z-50"
+        className="fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all z-50"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />

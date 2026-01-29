@@ -1,22 +1,38 @@
 // components/ConfirmationModal.jsx
-'use client';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+"use client";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+type ColorKey = "blue" | "red" | "green" | "black";
 
+const colorClasses: Record<ColorKey, string> = {
+  blue: "bg-blue-600 hover:bg-blue-700",
+  red: "bg-red-600 hover:bg-red-700",
+  green: "bg-green-600 hover:bg-green-700",
+  black: "bg-black hover:bg-zinc-800",
+};
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  confirmColor?: "blue" | "red" | "green" | "black"; // Restrict colors to valid options
+}
 export default function ConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  confirmColor = 'blue'
-}) {
+  confirmText = "Confirm",
+  confirmColor = "blue",
+}: ConfirmationModalProps) {
   if (!isOpen) return null;
 
   const colorClasses = {
-    blue: 'bg-blue-600 hover:bg-blue-700',
-    red: 'bg-red-600 hover:bg-red-700',
-    green: 'bg-green-600 hover:bg-green-700'
+    blue: "bg-blue-600 hover:bg-blue-700",
+    red: "bg-red-600 hover:bg-red-700",
+    green: "bg-green-600 hover:bg-green-700",
   };
 
   return (
@@ -31,7 +47,7 @@ export default function ConfirmationModal({
             <p className="text-sm text-gray-600 mt-1">{message}</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-end space-x-3">
           <button
             onClick={onClose}
@@ -41,7 +57,9 @@ export default function ConfirmationModal({
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-white rounded-lg transition-colors ${colorClasses[confirmColor]}`}
+            className={`px-4 py-2 text-white rounded-lg transition-colors ${
+              colorClasses[confirmColor as keyof typeof colorClasses]
+            }`}
           >
             {confirmText}
           </button>

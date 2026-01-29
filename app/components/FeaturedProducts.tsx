@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, TrendingUp } from 'lucide-react';
 import ProductCard from './ProductCard';
+import {Product} from "../../types/product"
 
 export default function FeaturedProducts() {
-  const [products, setProducts] = useState([]);
+const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

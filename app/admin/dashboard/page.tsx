@@ -1,4 +1,24 @@
 'use client';
+interface DashboardStats {
+  totalUsers: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  pendingOrders: number;
+  lowStockProducts: number;
+  newUsersToday: number;
+  conversionRate: string;
+}
+
+interface Order {
+  _id: string;
+  id: string; // The readable ID
+  userId: {
+    name: string;
+  };
+  totalAmount: number;
+  status: 'pending' | 'delivered' | 'processing' | 'shipped';
+}
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../components/AdminLayout';
@@ -13,9 +33,9 @@ import {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
+const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recentOrders, setRecentOrders] = useState([]);
+ const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -42,7 +62,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <AdminLayout user={user}>
+      <AdminLayout>
         <div className="animate-pulse">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[...Array(4)].map((_, i) => (
@@ -58,7 +78,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminLayout user={user}>
+    <AdminLayout >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">

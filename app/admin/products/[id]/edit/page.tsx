@@ -278,7 +278,7 @@ export default function EditProductPage() {
                     value={formData.categoryId}
                     onChange={(categoryId) => setFormData(prev => ({ ...prev, categoryId }))}
                     label="Select product category"
-                    required
+                  
                   />
                 </div>
 

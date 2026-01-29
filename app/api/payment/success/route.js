@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../config/db";
-import Order from "../../models/crder";
+import Order from "../../models/order";
 import ProductVariant from "../../models/ProductVariant";
 import { requireAuth } from "../../auth/auth";
 

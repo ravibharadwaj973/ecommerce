@@ -60,7 +60,7 @@ export default function Header() {
             )}
             
             {!user ? (
-              <Link href="/auth" className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
+              <Link href="/login" className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
                 <User size={12} /> <span>Join / Login</span>
               </Link>
             ) : (
@@ -145,7 +145,7 @@ export default function Header() {
             <input
               type="text"
               placeholder={searchPlaceholders[placeholderIndex]}
-              className="w-full bg-gray-50 text-[11px] font-bold uppercase tracking-widest pl-4 pr-10 py-3 rounded-2xl border border-transparent focus:bg-white focus:border-blue-100 transition-all outline-none"
+              className="w-full text-black bg-gray-50 text-[11px] font-bold uppercase tracking-widest pl-4 pr-10 py-3 rounded-2xl border  focus:bg-white border-black focus:border-blue-100 transition-all outline-none"
             />
             <Search size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
@@ -153,7 +153,7 @@ export default function Header() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             {!user && (
-               <Link href="/auth" className="p-2.5 hover:bg-gray-50 rounded-full">
+               <Link href="/login" className="p-2.5 hover:bg-gray-50 rounded-full">
                  <User className="w-5 h-5 text-gray-800" />
                </Link>
             )}

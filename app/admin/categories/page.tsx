@@ -52,7 +52,7 @@ export default function CategoriesPage() {
   
 const categories = Array.isArray(categoriesRaw)
   ? categoriesRaw
-  : categoriesRaw?.data || [];
+  : (categoriesRaw as any)?.data || [];
   // Fetch categories based on current parent
   useEffect(() => {
     const url = currentParent 
@@ -81,37 +81,42 @@ const categories = Array.isArray(categoriesRaw)
     setCurrentParent(index === 0 ? null : newBreadcrumbs[index]._id);
   };
 
-  const handleToggleExpand = async (categoryId: string) => {
-    if (expandedCategories.has(categoryId)) {
-      setExpandedCategories(prev => {
-        const next = new Set(prev);
-        next.delete(categoryId);
-        return next;
-      });
-    } else {
-      setExpandedCategories(prev => new Set(prev).add(categoryId));
-      
-      // Fetch children if not already loaded
-      if (!categories?.find(c => c._id === categoryId)?.children) {
-        try {
-          const res = await fetch(`/api/categories/children?parent=${categoryId}`);
-          const json = await res.json();
+ const handleToggleExpand = async (categoryId: string) => {
+  if (expandedCategories.has(categoryId)) {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      next.delete(categoryId);
+      return next;
+    });
+  } else {
+    // FIX: Ensure the state update returns the Set correctly
+    setExpandedCategories(prev => new Set(prev).add(categoryId));
+    
+    // FIX: Add Type (c: Category)
+    const categoryExists = categories?.find((c: Category) => c._id === categoryId);
+
+    if (!categoryExists?.children) {
+      try {
+        const res = await fetch(`/api/categories/children?parent=${categoryId}`);
+        const json = await res.json();
+        
+        if (json.success) {
+          // FIX: Add Type (cat: Category)
+          const updatedCategories = categories?.map((cat: Category) => 
+            cat._id === categoryId 
+              ? { ...cat, children: json.data }
+              : cat
+          );
           
-          if (json.success) {
-            // Update the category with children
-            const updatedCategories = categories?.map(cat => 
-              cat._id === categoryId 
-                ? { ...cat, children: json.data }
-                : cat
-            );
-            // Note: This would require a setter for the categories data
-          }
-        } catch (error) {
-          toast.error('Failed to load subcategories');
+          // If you have a setter for categories, use it here:
+          // setCategories(updatedCategories);
         }
+      } catch (error) {
+        toast.error('Failed to load subcategories');
       }
     }
-  };
+  }
+};
 
   const handleDeleteCategory = async (id: string) => {
     const result = await deleteCategory(`/api/categories/${id}`);

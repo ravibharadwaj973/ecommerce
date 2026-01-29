@@ -30,7 +30,23 @@ type Product = {
   name: string;
   skuPrefix?: string;
 };
-
+interface AttributeValue {
+  _id: string;
+  value: string;
+  attribute: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+}
+interface GroupedAttribute {
+  _id: string;
+  name: string;
+  values: Array<{
+    _id: string;
+    value: string;
+  }>;
+}
 export default function CreateVariantsPage() {
   const { id: productId } = useParams();
   const router = useRouter();
@@ -47,27 +63,31 @@ export default function CreateVariantsPage() {
   } = useApi<Attribute[]>();
   const attributeValues = Array.isArray(attributesRaw) ? attributesRaw : [];
 
-const attributes = Object.values(
-  attributeValues.reduce((acc: any, item: AttributeValue) => {
-    const attrId = item.attribute._id;
+ const attributes = Object.values(
+  ((attributeValues || []) as any[]).reduce(
+    (acc: Record<string, GroupedAttribute>, item: any) => {
+      const attrId = item.attribute?._id;
 
-    if (!acc[attrId]) {
-      acc[attrId] = {
-        _id: attrId,
-        name: item.attribute.name,
-        values: [],
-      };
-    }
+      if (!attrId) return acc; // Safety check
 
-    acc[attrId].values.push({
-      _id: item._id,
-      value: item.value,
-    });
+      if (!acc[attrId]) {
+        acc[attrId] = {
+          _id: attrId,
+          name: item.attribute.name,
+          values: [],
+        };
+      }
 
-    return acc;
-  }, {})
+      acc[attrId].values.push({
+        _id: item._id,
+        value: item.value,
+      });
+
+      return acc;
+    }, 
+    {} as Record<string, GroupedAttribute> // Explicitly type the initial value
+  )
 );
-
 
   const { loading: creating, postData: createVariant } = useApi();
 
@@ -221,7 +241,7 @@ const attributes = Object.values(
       toast.error(error.message || "Failed to create variants");
     }
   };
-console.log(attributes)
+  console.log(attributes);
   const totalVariants = generatedVariants.length;
   const totalStock = Number(stock) * totalVariants;
   const totalValue = Number(price) * totalStock;

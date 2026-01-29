@@ -1,23 +1,42 @@
-// context/AuthContext.jsx (Updated)
 'use client';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { toast } from 'sonner';
 
-const AuthContext = createContext();
+// 1. Define what the User object looks like
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'vendor' | 'customer';
+}
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+// 2. Define the Context structure
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (userData: any) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+  checkAdminAccess: () => boolean;
+  checkVendorAccess: () => boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // FIX: Explicitly type the user state
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const hasCheckedAuth = useRef(false);
 
-const hasCheckedAuth = useRef(false);
-
-useEffect(() => {
-  if (hasCheckedAuth.current) return;
-  hasCheckedAuth.current = true;
-  checkAuth();
-}, []);
+  useEffect(() => {
+    if (hasCheckedAuth.current) return;
+    hasCheckedAuth.current = true;
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -36,23 +55,20 @@ useEffect(() => {
     }
   };
 
-  const login = async (email, password) => {
+  // FIX: Type the email and password parameters
+  const login = async (email: string, password: string) => {
     try {
-
       const response = await fetch('/api/users/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success(data.message)
+        toast.success(data.message);
         setUser(data.data.user);
-    
         return { success: true };
       } else {
         return { success: false, message: data.message };
@@ -67,19 +83,16 @@ useEffect(() => {
       await fetch('/api/users/logout', { method: 'POST' });
       setUser(null);
       router.push('/login');
-      console.log("hello")
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  const register = async (userData) => {
+  const register = async (userData: any) => {
     try {
       const response = await fetch('/api/users/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
 
@@ -87,7 +100,6 @@ useEffect(() => {
 
       if (data.success) {
         setUser(data.data.user);
-       
         return { success: true };
       } else {
         return { success: false, message: data.message };
@@ -96,12 +108,16 @@ useEffect(() => {
       return { success: false, message: 'Registration failed' };
     }
   };
+
+  // Now user.role will work because user is typed as <User | null>
   const checkAdminAccess = () => {
-  return user?.role === 'admin'  
-};
-const checkVendorAccess = () => {
-  return user?.role === 'vendor' || user?.role === 'admin';
-};
+    return user?.role === 'admin';
+  };
+
+  const checkVendorAccess = () => {
+    return user?.role === 'vendor' || user?.role === 'admin';
+  };
+
   const value = {
     user,
     loading,

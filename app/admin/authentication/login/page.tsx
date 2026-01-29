@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     }
   }, [user, loading, router]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
 
@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
       router.push("/admin/dashboard");
     } else {
       setError(res.message || "Invalid credentials. Please try again.");
-      toast.error(res.error)
+      toast.error("Invalid credentials. Please try again.")
     }
 
     setSubmitting(false);

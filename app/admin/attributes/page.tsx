@@ -86,30 +86,33 @@ export default function AttributesPage() {
     }
   };
 
-  const handleUpdateAttribute = async () => {
-    if (!editAttribute._id || !editAttribute.name?.trim()) {
-      toast.error('Attribute name is required');
-      return;
-    }
+ const handleUpdateAttribute = async () => {
+  if (!editAttribute._id || !editAttribute.name?.trim()) {
+    toast.error('Attribute name is required');
+    return;
+  }
 
-    const result = await updateAttribute(`/api/newproducts/attributes/${editAttribute._id}`, {
-      name: editAttribute.name,
-      isActive: editAttribute.isActive,
-    });
+  // Use 'any' or cast the result if your custom hook/function returns an array by default
+  const result = await updateAttribute(`/api/newproducts/attributes/${editAttribute._id}`, {
+    name: editAttribute.name,
+    isActive: editAttribute.isActive,
+  });
 
-    if (result) {
-      setEditMode('view');
-      setEditAttribute({});
-      fetchAttributes('/api/newproducts/attributes');
-      
-      // If this was the selected attribute, update it
-      if (selectedAttribute?._id === editAttribute._id) {
-        setSelectedAttribute(result.data);
-      }
-      
-      toast.success('Attribute updated successfully');
+  if (result && result.data) {
+    setEditMode('view');
+    setEditAttribute({});
+    fetchAttributes('/api/newproducts/attributes');
+    
+    // If this was the selected attribute, update it
+    if (selectedAttribute?._id === editAttribute._id) {
+      // FIX: If data is an array, take the first item. If not, cast it.
+      const updatedData = Array.isArray(result.data) ? result.data[0] : result.data;
+      setSelectedAttribute(updatedData as Attribute);
     }
-  };
+    
+    toast.success('Attribute updated successfully');
+  }
+};
 
   const handleDeleteAttribute = async (attribute: Attribute) => {
     if (!confirm(`Delete attribute "${attribute.name}"? This will also delete all its values.`)) {

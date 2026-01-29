@@ -45,10 +45,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ productId }),
       });
       const result = await res.json();
+      
       if (result.success) {
         toast.success(result.message);
         // Refresh both IDs and Items
         fetchWishlist();
+      }else{
+        toast.success(result.message);
       }
     } catch (err) { toast.error("Error updating wishlist"); }
     finally { setIsToggling(null); }

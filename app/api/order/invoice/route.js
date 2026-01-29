@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit";
-import Order from "@/models/Order";
-import { connectDB } from "@/config/db";
-import { requireAuth } from "@/auth/auth";
+import Order from "../../models/order";
+import { connectDB } from "../../config/db";
+import { requireAuth } from "../../auth/auth";
 
 export async function GET(request) {
   await connectDB();

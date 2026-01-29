@@ -1,9 +1,23 @@
 // components/CategoryModal.jsx
 'use client';
+interface Category {
+  _id?: string;
+  name: string;
+  description?: string;
+  image?: string;
+  isActive: boolean;
+}
+
+interface CategoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  category: Category | null;
+  onSuccess: () => void;
+}
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function CategoryModal({ isOpen, onClose, category, onSuccess }) {
+export default function CategoryModal({ isOpen, onClose, category, onSuccess }: CategoryModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -11,7 +25,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
     isActive: true
   });
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+ const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (category) {
@@ -32,8 +46,9 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
     setErrors({});
   }, [category, isOpen]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -45,7 +60,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
   };
 
   const validateForm = () => {
-    const newErrors = {};
+ const newErrors: Record<string, string> = {};
     
     if (!formData.name.trim()) {
       newErrors.name = 'Category name is required';
@@ -59,7 +74,7 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -169,8 +184,8 @@ export default function CategoryModal({ isOpen, onClose, category, onSuccess }) 
                   alt="Preview"
                   className="w-20 h-20 rounded-lg object-cover border"
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
+  (e.target as HTMLImageElement).style.display = 'none';
+}}
                 />
               </div>
             )}
