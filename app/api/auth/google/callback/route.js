@@ -58,7 +58,7 @@ export async function GET(request) {
   );
 
   // 6️⃣ Set JWT cookie
-  const response = NextResponse.redirect(process.env.VERCEL_URL||"http://localhost:3000");
+  const response = NextResponse.redirect(process.env.VERCEL_URL||"https://ecommerce-one-delta-49.vercel.app/");
 
   response.cookies.set("token", token, {
     httpOnly: true,
