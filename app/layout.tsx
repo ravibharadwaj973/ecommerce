@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
-import Chatbot from './components/Chatbot';
-import { Toaster } from 'sonner';
-import { CartProvider } from './context/CartContext';
+import Chatbot from "./components/Chatbot";
+import { Toaster } from "sonner";
+import { CartProvider } from "./context/CartContext";
 import { OrdersProvider } from "./context/OrdersContext";
 import { WishlistProvider } from "./context/wishlist";
 import Header from "./components/header";
+import { SubscriptionProvider } from "./context/SubscriptionContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -30,45 +31,44 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <AuthProvider>
+          <WishlistProvider>
+            <SubscriptionProvider>
         <Header />
-       <AuthProvider>
-      <WishlistProvider>
-
-        <CartProvider>
-           <OrdersProvider>
-          {children}
-            <Chatbot />
-            <Toaster
-  position="top-right"
-  expand={true}
-  richColors
-  closeButton
-  duration={5000}
-  theme="light" // or "dark", "system"
-  visibleToasts={5}
-  offset={16}
-  gap={12}
-  pauseWhenPageIsHidden={true}
-  toastOptions={{
-    style: {
-      background: '#fff',
-      color: '#000',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-    },
-    className: 'custom-toast',
-  }}
-  />
-  </OrdersProvider>
-    </CartProvider>
-    </WishlistProvider>
-
+              <CartProvider>
+                <OrdersProvider>
+                  {children}
+                  <Chatbot />
+                  <Toaster
+                    position="top-right"
+                    expand={true}
+                    richColors
+                    closeButton
+                    duration={5000}
+                    theme="light" // or "dark", "system"
+                    visibleToasts={5}
+                    offset={16}
+                    gap={12}
+                    pauseWhenPageIsHidden={true}
+                    toastOptions={{
+                      style: {
+                        background: "#fff",
+                        color: "#000",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      },
+                      className: "custom-toast",
+                    }}
+                  />
+                </OrdersProvider>
+              </CartProvider>
+            </SubscriptionProvider>
+          </WishlistProvider>
         </AuthProvider>
       </body>
     </html>

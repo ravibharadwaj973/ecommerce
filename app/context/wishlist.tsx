@@ -1,97 +1,84 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useAuth } from "./AuthContext";
-import { useWishlistStore } from "../store/wishlist.store";
 
-const WishlistContext = createContext();
+interface WishlistContextType {
+  wishlistIds: string[]; // For heart icons
+  wishlistItems: any[];  // For the Wishlist Page
+  isToggling: string | null;
+  toggleWishlist: (e: React.MouseEvent | null, productId: string) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  isLoadingWishlist: boolean;
+}
 
-export function WishlistProvider({ children }) {
-  const { user } = useAuth();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-const { setWishlist, clearWishlist } = useWishlistStore();
+const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-  useEffect(() => {
-    if (user) {
-      fetchWishlist();
-    } else {
-     clearWishlist();
-      setLoading(false);
-    }
-  }, [user]);
+export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [isToggling, setIsToggling] = useState<string | null>(null);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(true);
 
   const fetchWishlist = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/wishlist");
-      const data = await res.json();
-
-      if (data.success) {
-        setWishlist(data.data.items);
+      const result = await res.json();
+      if (result.success) {
+        setWishlistItems(result.data.items);
+        setWishlistIds(result.data.items.map((item: any) => item.product?._id));
       }
-    } catch {
-      toast.error("Failed to load wishlist");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setIsLoadingWishlist(false); }
   };
 
-  const addToWishlist = async (productId) => {
+  useEffect(() => { fetchWishlist(); }, []);
+
+  // Shared toggle function (Used by Heart Icons)
+  const toggleWishlist = async (e: React.MouseEvent | null, productId: string) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    setIsToggling(productId);
     try {
       const res = await fetch("/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),
       });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setItems((prev) => [...prev, data.data.item]);
-        toast.success("Added to wishlist");
-      } else {
-        toast.error(data.message);
+      const result = await res.json();
+      if (result.success) {
+        toast.success(result.message);
+        // Refresh both IDs and Items
+        fetchWishlist();
       }
-    } catch {
-      toast.error("Wishlist error");
-    }
+    } catch (err) { toast.error("Error updating wishlist"); }
+    finally { setIsToggling(null); }
   };
 
-  const removeFromWishlist = async (productId) => {
+  // Specific delete function (Used by Trash icon in Wishlist Page)
+  const removeItem = async (productId: string) => {
     try {
-  
-      const res = await fetch(`/api/wishlist/${productId}`, {
+      const res = await fetch("/api/wishlist/clear", {
         method: "DELETE",
+        body: JSON.stringify({ productId }),
       });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setItems((prev) => prev.filter((i) => i.product._id !== productId));
-        toast.success("Removed from wishlist");
-      } else {
-        toast.error(data.message);
+      const result = await res.json();
+      if (result.success) {
+        toast.success(result.message);
+        setWishlistItems(result.data.items);
+        setWishlistIds(result.data.items.map((item: any) => item.product?._id));
       }
-    } catch {
-      toast.error("Failed to remove item");
-    }
+    } catch (err) { toast.error("Failed to remove item"); }
   };
 
   return (
-    <WishlistContext.Provider
-      value={{
-        items,
-        loading,
-        addToWishlist,
-        removeFromWishlist,
-        refresh: fetchWishlist,
-      }}
-    >
+    <WishlistContext.Provider value={{ wishlistIds, wishlistItems, isToggling, toggleWishlist, removeItem, isLoadingWishlist }}>
       {children}
     </WishlistContext.Provider>
   );
 }
 
-export const useWishlist = () => useContext(WishlistContext);
+export const useWishlist = () => {
+  const context = useContext(WishlistContext);
+  if (!context) throw new Error("useWishlist must be used within WishlistProvider");
+  return context;
+};

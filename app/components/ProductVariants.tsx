@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, ShieldCheck, Truck, Heart, Share2, Plus } from "lucide-react";
 import Image from "next/image";
+import { useWishlist } from "../context/wishlist"; // Corrected casing
 
 interface Variant {
   _id: string;
@@ -16,6 +17,7 @@ interface Variant {
 }
 
 interface ProductBasicInfo {
+  _id: string; // Added this
   name: string;
   brand: string;
   description: string;
@@ -30,13 +32,17 @@ export default function ProductVariants({ productId }: { productId: string }) {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [mainImage, setMainImage] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Corrected Wishlist Context Usage
+  const { wishlistIds, isToggling, toggleWishlist } = useWishlist();
+  
+  // These must be calculated after productInfo is loaded
+  const isLiked = productInfo ? wishlistIds.includes(productInfo._id) : false;
+  const isTogglingThis = productInfo ? isToggling === productInfo._id : false;
 
   useEffect(() => {
     async function initProduct() {
       try {
-        // 1. Fetch Product Variants
         const res = await fetch(`/api/newproducts/variants?product=${productId}`);
         const result = await res.json();
 
@@ -55,15 +61,6 @@ export default function ProductVariants({ productId }: { productId: string }) {
             if (sizeAttr) setSelectedSize(sizeAttr.value.value);
           }
         }
-
-        // 2. Check Wishlist Status
-        const wishlistRes = await fetch("/api/wishlist");
-        const wishlistResult = await wishlistRes.json();
-        if (wishlistResult.success) {
-          const exists = wishlistResult.data.items.some((item: any) => item.product?._id === productId);
-          setIsLiked(exists);
-        }
-
       } catch (err) {
         console.error("Initialization failed", err);
       } finally {
@@ -72,26 +69,6 @@ export default function ProductVariants({ productId }: { productId: string }) {
     }
     initProduct();
   }, [productId]);
-
-  const toggleWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    setWishlistLoading(true);
-    try {
-      const res = await fetch("/api/wishlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setIsLiked(!isLiked);
-      }
-    } catch (err) {
-      console.error("Wishlist toggle failed", err);
-    } finally {
-      setWishlistLoading(false);
-    }
-  };
 
   const handleAddToCart = async () => {
     if (!activeVariant) return;
@@ -115,11 +92,14 @@ export default function ProductVariants({ productId }: { productId: string }) {
     }
   };
 
+  // Logic to find valid options and the active variant
   const colors = Array.from(new Set(variants.flatMap((v) => v.attributes.filter((a) => a.attribute.slug === "color").map((a) => a.value.value))));
   const sizes = Array.from(new Set(variants.flatMap((v) => v.attributes.filter((a) => a.attribute.slug === "size").map((a) => a.value.value))));
 
   const activeVariant = variants.find(
-    (v) => v.attributes.some((a) => a.value.value === selectedColor) && v.attributes.some((a) => a.value.value === selectedSize)
+    (v) => 
+      v.attributes.some((a) => a.value.value === selectedColor) && 
+      v.attributes.some((a) => a.value.value === selectedSize)
   );
 
   if (loading) return (
@@ -138,11 +118,15 @@ export default function ProductVariants({ productId }: { productId: string }) {
               <Image src={mainImage} alt={productInfo?.name || "Product"} fill className="object-cover" priority />
             )}
             <button 
-              onClick={toggleWishlist}
-              disabled={wishlistLoading}
-              className="absolute top-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-full hover:scale-110 transition-all shadow-xl z-10"
+              onClick={(e) => productInfo && toggleWishlist(e, productInfo._id)}
+              disabled={isTogglingThis}
+              className="absolute top-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-full hover:scale-110 transition-all shadow-xl z-10 disabled:opacity-50"
             >
-              <Heart size={22} fill={isLiked ? "#ef4444" : "none"} className={isLiked ? "text-red-500" : "text-gray-900"} />
+              <Heart 
+                size={22} 
+                fill={isLiked ? "#ef4444" : "none"} 
+                className={`${isLiked ? "text-red-500" : "text-gray-900"} ${isTogglingThis ? "animate-pulse" : ""}`} 
+              />
             </button>
           </div>
 
@@ -171,9 +155,13 @@ export default function ProductVariants({ productId }: { productId: string }) {
             <h1 className="text-5xl font-black uppercase tracking-tighter text-gray-900 leading-none mb-6 italic">{productInfo?.name}</h1>
             <div className="flex items-center gap-4">
               <span className="text-4xl font-black text-gray-900 tracking-tighter">
-                ${activeVariant?.price || variants[0]?.price}
+                ${(activeVariant?.price || variants[0]?.price)?.toLocaleString()}
               </span>
-              <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-full tracking-widest">In Stock</span>
+              {activeVariant?.stock && activeVariant.stock > 0 ? (
+                 <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase rounded-full tracking-widest">In Stock</span>
+              ) : (
+                 <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-full tracking-widest">Sold Out</span>
+              )}
             </div>
           </header>
 
@@ -225,7 +213,7 @@ export default function ProductVariants({ productId }: { productId: string }) {
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400 text-white py-6 rounded-3xl font-black uppercase tracking-[0.2em] text-xs transition-all shadow-2xl shadow-blue-200 active:scale-95 flex items-center justify-center gap-3"
             >
               {isAdding ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
-              {activeVariant && activeVariant.stock > 0 ? "Add to Bag" : "Currently Unavailable"}
+              {!activeVariant ? "Select Options" : activeVariant.stock > 0 ? "Add to Bag" : "Out of Stock"}
             </button>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
