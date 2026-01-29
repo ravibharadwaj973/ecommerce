@@ -58,7 +58,7 @@ export async function GET(request) {
   );
 
   // 6️⃣ Set JWT cookie
-  const response = NextResponse.redirect("http://localhost:3000/products");
+  const response = NextResponse.redirect(process.env.VERCEL_URL||"http://localhost:3000");
 
   response.cookies.set("token", token, {
     httpOnly: true,
