@@ -7,14 +7,20 @@ async function getUserFromToken(request) {
   const token = request.cookies.get("token")?.value;
   if (!token) return null;
 
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error("JWT_SECRET missing");
+    return null;
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
-    return decoded;
+    return jwt.verify(token, secret);
   } catch (err) {
-    console.error("Token verification failed:", err);
+    console.error("Token verification failed:", err.message);
     return null;
   }
 }
+
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
