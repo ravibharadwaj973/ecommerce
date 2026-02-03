@@ -119,7 +119,7 @@ export default function Header() {
 
       {/* MOBILE NAVIGATION */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100">
+        <div className="lg:hidden bg-white border-t border-gray-100 text-black">
           <div className="px-4 py-4 space-y-4">
             {NAVIGATION_DATA.map((section) => (
               <div key={section.id}>
