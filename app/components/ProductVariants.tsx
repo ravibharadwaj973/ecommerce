@@ -43,6 +43,7 @@ export default function ProductVariants({ productId }: { productId: string }) {
   useEffect(() => {
     async function initProduct() {
       try {
+        
         const res = await fetch(`/api/newproducts/variants?product=${productId}`);
         const result = await res.json();
 

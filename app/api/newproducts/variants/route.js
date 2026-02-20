@@ -7,6 +7,7 @@ import ProductVariant from "../../models/ProductVariant";
 import Attribute from "../../models/Attribute";
 import AttributeValue from "../../models/AttributeValue";
 import { requireAuth } from "../../auth/auth";
+import redis from "../../_lib/redis"; // Your Redis client
 
 export async function POST(request) {
   try {
@@ -159,63 +160,48 @@ console.log(product)
 export async function GET(request) {
   try {
     await connectDB();
-
     const { searchParams } = new URL(request.url);
-    const productId = searchParams.get("product"); // This is the product ID from URL
-    const page = searchParams.get("page") || 1;
-    const limit = searchParams.get("limit") || 10;
+    const productId = searchParams.get("product");
 
-    if (!productId) {
-      return NextResponse.json(
-        { success: false, message: "Product ID is required" },
-        { status: 400 }
-      );
+    if (!productId) return NextResponse.json({ success: false }, { status: 400 });
+
+    // --- REDIS CACHE CHECK ---
+    const cacheKey = `product_page:${productId}`;
+    const cachedData = await redis.get(cacheKey);
+
+    if (cachedData) {
+      console.log("Serving from Redis Cache 🚀");
+      return NextResponse.json(JSON.parse(cachedData));
     }
+    // -------------------------
 
-    const { skip, pageNumber, pageSize } = getPagination(page, limit);
-
-    // ✅ FETCH EVERYTHING IN PARALLEL
     const [productDetails, variants, total] = await Promise.all([
-      // 1. Get the Main Product Info
       newProduct.findById(productId).lean(),
-      
-      // 2. Get the Variants
       ProductVariant.find({ product: productId, isActive: true })
-        .skip(skip)
-        .limit(pageSize)
         .populate("attributes.attribute")
         .populate("attributes.value")
         .lean(),
-
-      // 3. Get count for pagination
       ProductVariant.countDocuments({ product: productId, isActive: true }),
     ]);
 
-    // Check if the product actually exists
     if (!productDetails) {
-      return NextResponse.json(
-        { success: false, message: "Product not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, message: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
-      // ✅ Return both product info and variants
-      product: productDetails, 
+      product: productDetails,
       data: variants,
-      pagination: {
-        total,
-        page: pageNumber,
-        pages: Math.ceil(total / pageSize),
-        limit: pageSize,
-      },
-    });
+      total
+    };
+
+    // --- SAVE TO REDIS ---
+    // We save it for 1 hour (3600 seconds)
+    await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 3600);
+    // ---------------------
+
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Variant fetch error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

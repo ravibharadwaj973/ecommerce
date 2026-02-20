@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   // Use an environment variable for the domain, fallback to localhost for dev
-  const baseUrl = process.env.VERCEL_URL || "https://ecommerce-one-delta-49.vercel.app/";
+  const baseUrl = process.env.VERCEL_URL || "http://localhost:3000";
   
   const redirectUrl = `${baseUrl}/api/auth/google/callback`;
 

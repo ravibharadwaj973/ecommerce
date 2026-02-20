@@ -4,8 +4,6 @@ import { sendOtpEmail } from "../_lib/email"; // adjust path if needed
 
 export async function GET() {
   try {
-  
-
     const success = await sendOtpEmail(testEmail, testOtp);
 
     if (success) {
@@ -19,15 +17,18 @@ export async function GET() {
           success: false,
           message: "Failed to send email. Check console for error logs.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
     console.error("Email route error:", error);
     return NextResponse.json(
-      { success: false, message: "Error sending test email", error: error.message },
-      { status: 500 }
+      {
+        success: false,
+        message: "Error sending test email",
+        error: error.message,
+      },
+      { status: 500 },
     );
   }
 }
-

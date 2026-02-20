@@ -4,12 +4,26 @@ import { connectDB } from "../config/db";
 import { requireAuth } from "../auth/auth";
 import Cart from "../models/cart";
 import ProductVariant from "../models/ProductVariant";
-
+import redis from "../_lib/redis";
 export async function POST(request) {
   await connectDB();
   const user = await requireAuth(request);
   if (user instanceof NextResponse) return user;
 
+  const rateLimitKey = `cart_limit:${user.id}`;
+  try {
+    const currentRequests = await redis.incr(rateLimitKey);
+    if (currentRequests === 1) await redis.expire(rateLimitKey, 60);
+
+    if (currentRequests > 20) { // Limit: 30 items added per minute
+      return NextResponse.json(
+        { success: false, message: "Take a breath! You are adding items too fast." },
+        { status: 429 }
+      );
+    }
+  } catch (err) {
+    console.error("Redis error:", err);
+  }
   const { variantId, quantity = 1 } = await request.json();
 
   const variant = await ProductVariant.findById(variantId);
@@ -72,6 +86,20 @@ export async function PUT(request) {
   const user = await requireAuth(request);
   if (user instanceof NextResponse) return user;
 
+  const rateLimitKey = `cart_update_limit:${user.id}`;
+  try {
+    const currentRequests = await redis.incr(rateLimitKey);
+    if (currentRequests === 1) await redis.expire(rateLimitKey, 60);
+
+    if (currentRequests > 20) { // Limit: 30 items added per minute
+      return NextResponse.json(
+        { success: false, message: "Take a breath! You are adding items too fast." },
+        { status: 429 }
+      );
+    }
+  } catch (err) {
+    console.error("Redis error:", err);
+  }
   const { variantId, quantity } = await request.json();
 
   const cart = await Cart.findOne({ user: user.id });

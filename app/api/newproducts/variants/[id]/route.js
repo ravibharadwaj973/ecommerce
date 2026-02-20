@@ -15,12 +15,12 @@ export async function PATCH(request, context) {
     if (!["admin", "vendor"].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: "Not authorized" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const {id}=await context.params;
-    const variantId=id;
+    const { id } = await context.params;
+    const variantId = id;
     const body = await request.json();
 
     const { price, stock, isActive, attributes } = body;
@@ -29,7 +29,7 @@ export async function PATCH(request, context) {
     if (!variant) {
       return NextResponse.json(
         { success: false, message: "Variant not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -38,16 +38,16 @@ export async function PATCH(request, context) {
       if (!Array.isArray(attributes) || attributes.length === 0) {
         return NextResponse.json(
           { success: false, message: "Attributes must be an array" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       for (const item of attributes) {
-          console.log(item.attribute)
+        console.log(item.attribute);
         const attr = await Attribute.findById(item.attribute);
         if (!attr) {
           return NextResponse.json(
             { success: false, message: "Invalid attribute" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -55,7 +55,7 @@ export async function PATCH(request, context) {
         if (!value) {
           return NextResponse.json(
             { success: false, message: "Invalid 3 attribute value" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -65,7 +65,7 @@ export async function PATCH(request, context) {
               success: false,
               message: `Value does not belong to attribute ${attr.name}`,
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
       }
@@ -93,11 +93,11 @@ export async function PATCH(request, context) {
         message: "Error updating variant",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-export async function DELETE(request,context) {
+export async function DELETE(request, context) {
   try {
     await connectDB();
 
@@ -107,18 +107,18 @@ export async function DELETE(request,context) {
     if (!["admin", "vendor"].includes(user.role)) {
       return NextResponse.json(
         { success: false, message: "Not authorized" },
-        { status: 403 }
+        { status: 403 },
       );
     }
-const {id}=await context.params;
+    const { id } = await context.params;
     const variantId = id;
 
- const variant = await ProductVariant.findById(variantId);
+    const variant = await ProductVariant.findById(variantId);
 
     if (!variant) {
       return NextResponse.json(
         { success: false, message: "Variant not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -136,7 +136,7 @@ const {id}=await context.params;
         message: "Error deleting variant",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

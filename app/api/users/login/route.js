@@ -3,25 +3,37 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { connectDB } from "../../config/db";
 import User from "../../models/users";
-
+import redis from "../../_lib/redis";
 export async function POST(request) {
   try {
     await connectDB();
+const ip = request.ip || '127.0.0.1';
+    console.log(ip);
+    const key = `login_limit:${ip}`;
+    // 1. Check Rate Limit
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, 120);
 
+    if (count > 5) {
+      return NextResponse.json(
+        { success: false, message: "Too many attempts." },
+        { status: 429 },
+      );
+    }
     const { email, password } = await request.json();
 
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!user.isActive) {
       return NextResponse.json(
         { success: false, message: "Account is deactivated" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -29,7 +41,7 @@ export async function POST(request) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +49,7 @@ export async function POST(request) {
     const token = jwt.sign(
       { id: user._id.toString(), email: user.email, role: user.role },
       process.env.JWT_SECRET || "your_jwt_secret",
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     user.lastLogin = new Date();
@@ -61,7 +73,7 @@ export async function POST(request) {
           },
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
 
     // Save JWT in httpOnly cookie
@@ -78,7 +90,7 @@ export async function POST(request) {
     console.error("Login error:", error);
     return NextResponse.json(
       { success: false, message: "Error logging in", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

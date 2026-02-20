@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function LoginForm() {
 
     if (!result.success) {
       setError(result.message); // This will now work
+      toast.error(result.message)
     }
     setLoading(false);
   };
