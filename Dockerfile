@@ -16,6 +16,10 @@ RUN npm run build
 # Stage 3: Production runner
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+ARG RESEND_API_KEY
+ENV RESEND_API_KEY=$RESEND_API_KEY
+
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
