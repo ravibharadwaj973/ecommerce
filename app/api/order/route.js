@@ -6,7 +6,7 @@ import Address from "../models/Address";
 
 import Cart from "../models/cart";
 import ProductVariant from "../models/ProductVariant";
-import redis from "../_lib/redis";
+
 
 export async function POST(request) {
   try {
@@ -14,26 +14,6 @@ export async function POST(request) {
     const user = await requireAuth(request);
     if (user instanceof NextResponse) return user;
 
-    const orderLimitKey = `order_limit:${user.id}`;
-  try {
-    const currentRequests = await redis.incr(orderLimitKey);
-    if (currentRequests === 1) await redis.expire(orderLimitKey, 60);
-
-    // Strict: Only 2 order attempts per minute
-    if (currentRequests > 2) {
-      return NextResponse.json(
-        { success: false, message: "Please wait before placing another order." },
-        { status: 429 }
-      );
-    }
-  } catch (err) {
-    console.error("Redis error:", err);
-  }
-
-  // 2. The "Double-Click" Lock (The Atomic Lock)
-  // This prevents two identical requests from processing at the exact same millisecond
-  const lockKey = `order_lock:${user.id}`;
-  const isLocked = await redis.set(lockKey, "locked", "EX", 5, "NX"); 
   // NX means "Only set if it doesn't exist" - perfect for preventing double-clicks
   
   if (!isLocked) {

@@ -61,17 +61,12 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: currentInput }),
-      });
-
-      const data = await response.json();
+    
+    
 
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: data.reply || "I'm sorry, I couldn't process that.",
+        text:  "I'm sorry, I couldn't process that.",
         isUser: false,
         timestamp: new Date()
       };
